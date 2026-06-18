@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>CPPG 학습 시스템</title>
+
+<style>
+body {
+  margin:0;
+  font-family: "Segoe UI", Arial;
+  background:#f5f7fb;
+}
+
+/* 상단 */
+.header{
+  background:linear-gradient(90deg,#2563eb,#1e40af);
+  color:white;
+  padding:30px;
+  text-align:center;
+}
+
+/* 시험 안내 */
+.exam-box{
+  background:white;
+  padding:20px;
+  margin:20px auto;
+  max-width:900px;
+  border-radius:16px;
+  box-shadow:0 6px 20px rgba(0,0,0,0.08);
+}
+
+.exam-title{
+  font-size:1.2rem;
+  font-weight:bold;
+  margin-bottom:10px;
+}
+
+.exam-grid{
+  display:flex;
+  gap:20px;
+  flex-wrap:wrap;
+}
+
+.exam-item{
+  background:#eef2ff;
+  padding:10px 14px;
+  border-radius:10px;
+}
+
+/* 카드 영역 */
+.container{
+  max-width:1000px;
+  margin:20px auto;
+  padding:10px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:20px;
+}
+
+/* 카드 */
+.card{
+  background:white;
+  border-radius:16px;
+  padding:20px;
+  cursor:pointer;
+  box-shadow:0 6px 20px rgba(0,0,0,0.08);
+  transition:0.2s;
+}
+
+.card:hover{
+  transform:translateY(-4px);
+}
+
+.card h2{
+  margin:0 0 8px;
+}
+
+/* 상세 */
+.detail{
+  display:none;
+  margin-top:10px;
+  padding-top:10px;
+  border-top:1px solid #eee;
+}
+
+.detail a{
+  display:block;
+  padding:5px 0;
+  text-decoration:none;
+  color:#2563eb;
+}
+
+.detail a:hover{
+  text-decoration:underline;
+}
+
+.active{
+  display:block;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- 헤더 -->
+<div class="header">
+  <h1>📘 CPPG 학습 시스템</h1>
+  <p>10주 완성 커리큘럼</p>
+</div>
+
+<!-- 시험 안내 -->
+<div class="exam-box">
+  <div class="exam-title">📌 CPPG 시험 안내</div>
+  <div class="exam-grid">
+    <div class="exam-item">시험과목: 개인정보 보호법 / 시행령 / 관리체계</div>
+    <div class="exam-item">총 문제수: 40문항</div>
+    <div class="exam-item">객관식: 5지선다</div>
+    <div class="exam-item">합격기준: 60점 이상</div>
+  </div>
+</div>
+
+<!-- 카드 영역 -->
+<div class="container">
+
+<!-- 1주차 -->
+<div class="card" onclick="toggle('w1')">
+<h2>1주차</h2>
+<p>자동화된 결정</p>
+<div id="w1" class="detail">
+week1/day1.htmlDay1</a>
+week1/day2.htmlDay2</a>
+week1/day3.htmlDay3</a>
+week1/day4.htmlDay4</a>
+week1/day5.htmlDay5</a>
+week1/summary.html📊 정리</a>
+</div>
+</div>
+
+<!-- 2주차 -->
+<div class="card" onclick="toggle('w2')">
+<h2>2주차</h2>
+<p>처리 원칙</p>
+<div id="w2" class="detail">
+week2/day1.htmlDay1</a>
+week2/day2.htmlDay2</a>
+week2/day3.htmlDay3</a>
+week2/day4.htmlDay4</a>
+week2/day5.htmlDay5</a>
+week2/summary.html📊 정리</a>
+</div>
+</div>
+
+<!-- 3주차 -->
+<div class="card" onclick="toggle('w3')">
+<h2>3주차</h2>
+<p>정보주체 권리</p>
+<div id="w3" class="detail">
+week3/day1.htmlDay1</a>
+week3/day2.htmlDay2</a>
+week3/day3.htmlDay3</a>
+week3/day4.htmlDay4</a>
+week3/day5.htmlDay5</a>
+week3/summary.html📊 정리</a>
+</div>
+</div>
+
+<!-- 4주차 -->
+<div class="card" onclick="toggle('w4')">
+<h2>4주차</h2>
+<p>처리 제한</p>
+<div id="w4" class="detail">
+week4/day1.htmlDay1</a>
+week4/day2.htmlDay2</a>
+week4/day3.htmlDay3</a>
+week4/day4.htmlDay4</a>
+week4/day5.htmlDay5</a>
+week4/summary.html📊 정리</a>
+</div>
+</div>
+
+<!-- 5주차 -->
+<div class="card" onclick="toggle('w5')">
+<h2>5주차</h2>
+<div id="w5" class="detail">
+week5/day1.htmlDay1</a>
+week5/day2.htmlDay2</a>
+week5/day3.htmlDay3</a>
+week5/day4.htmlDay4</a>
+week5/day5.htmlDay5</a>
+week5/summary.html📊 정리</a>
+</div>
+</div>
+
+<!-- 6주차 -->
+<div class="card" onclick="toggle('w6')">
+<h2>6주차</h2>
+<div id="w6" class="detail">
+week6/day1.htmlDay1</a>
+week6/day2.htmlDay2</a>
+week6/day3.htmlDay3</a>
+week6/day4.htmlDay4</a>
+week6/day5.htmlDay5</a>
+week6/summary.html📊 정리</a>
+</div>
+</div>
+
+<!-- 7주차 -->
+<div class="card" onclick="toggle('w7')">
+<h2>7주차</h2>
+<div id="w7" class="detail">
+week7/day1.htmlDay1</a>
+week7/day2.htmlDay2</a>
+week7/day3.htmlDay3</a>
+week7/day4.htmlDay4</a>
+week7/day5.htmlDay5</a>
+week7/summary.html📊 정리</a>
+</div>
+</div>
+
+<!-- 8주차 -->
+<div class="card" onclick="toggle('w8')">
+<h2>8주차</h2>
+<div id="w8" class="detail">
+week8/day1.htmlDay1</a>
+week8/day2.htmlDay2</a>
+week8/day3.htmlDay3</a>
+week8/day4.htmlDay4</a>
+week8/day5.htmlDay5</a>
+week8/summary.html📊 정리</a>
+</div>
+</div>
+
+<!-- 9주차 -->
+<div class="card" onclick="toggle('w9')">
+<h2>9주차</h2>
+<div id="w9" class="detail">
+week9/day1.htmlDay1</a>
+week9/day2.htmlDay2</a>
+week9/day3.htmlDay3</a>
+week9/day4.htmlDay4</a>
+week9/day5.htmlDay5</a>
+week9/summary.html📊 정리</a>
+</div>
+</div>
+
+<!-- 10주차 -->
+<div class="card" onclick="toggle('w10')">
+<h2>10주차</h2>
+<div id="w10" class="detail">
+week10/day1.htmlDay1</a>
+week10/day2.htmlDay2</a>
+week10/day3.htmlDay3</a>
+week10/day4.htmlDay4</a>
+week10/day5.htmlDay5</a>
+week10/summary.html📊 정리</a>
+</div>
+</div>
+
+</div>
+
+<script>
+function toggle(id){
+  const el = document.getElementById(id);
+  if(el.classList.contains("active")){
+    el.classList.remove("active");
+  }else{
+    document.querySelectorAll(".detail").forEach(d=>{
+      d.classList.remove("active");
+    });
+    el.classList.add("active");
+  }
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CPPG 3주차 Day 4 - 업그레이드 버전</title>
+  <style>
+    :root {
+      --bg: #f7f9fc;
+      --card: #ffffff;
+      --text: #1f2937;
+      --sub: #6b7280;
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --success-bg: #ecfdf5;
+      --success-border: #10b981;
+      --danger-bg: #fef2f2;
+      --danger-border: #ef4444;
+      --warning-bg: #fff7ed;
+      --warning-border: #f59e0b;
+      --soft-blue: #eef4ff;
+      --soft-red: #ffeaea;
+      --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: "Segoe UI", Arial, sans-serif;
+      line-height: 1.65;
+      background: linear-gradient(180deg, #f8fbff 0%, #f5f7fb 100%);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 920px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      background: var(--card);
+      border-radius: 22px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+      margin-bottom: 18px;
+    }
+
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: 1.8rem;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--sub);
+    }
+
+    .badge-box {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin: 18px 0 8px;
+    }
+
+    .badge {
+      border-radius: 14px;
+      padding: 14px 16px;
+      font-size: 0.98rem;
+    }
+
+    .notice {
+      background: var(--soft-red);
+      border: 1px solid #ffcaca;
+    }
+
+    .info {
+      background: var(--soft-blue);
+      border: 1px solid #d9e7ff;
+    }
+
+    .score-panel {
+      position: sticky;
+      top: 12px;
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(6px);
+      border: 1px solid #e5e7eb;
+      box-shadow: var(--shadow);
+      border-radius: 18px;
+      padding: 14px 16px;
+      margin: 18px 0 22px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .score-left {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .score-title {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .progress-wrap {
+      width: 280px;
+      max-width: 100%;
+      height: 10px;
+      background: #e5e7eb;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #60a5fa, #2563eb);
+      transition: width 0.25s ease;
+    }
+
+    .score-right {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 12px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: 0.2s ease;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: #f3f4f6;
+      color: #111827;
+    }
+
+    .btn-secondary:hover {
+      background: #e5e7eb;
+      transform: translateY(-1px);
+    }
+
+    .quiz-list {
+      display: grid;
+      gap: 18px;
+    }
+
+    .question-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 2px solid transparent;
+      padding: 20px;
+      transition: 0.18s ease;
+    }
+
+    .question-card.correct {
+      background: var(--success-bg);
+      border-color: var(--success-border);
+    }
+
+    .question-card.incorrect {
+      background: var(--danger-bg);
+      border-color: var(--danger-border);
+    }
+
+    .question-meta {
+      color: var(--sub);
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+    }
+
+    .question-title {
+      font-weight: 800;
+      margin-bottom: 14px;
+      font-size: 1.08rem;
+    }
+
+    .options {
+      display: grid;
+      gap: 10px;
+      margin: 12px 0 8px;
+    }
+
+    .option {
+      border: 1px solid #d1d5db;
+      background: #fff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: 0.15s ease;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .option:hover {
+      border-color: #93c5fd;
+      background: #f8fbff;
+    }
+
+    .option.selected {
+      border-color: var(--primary);
+      background: #eff6ff;
+    }
+
+    .option-letter {
+      font-weight: 800;
+      min-width: 28px;
+      color: #1d4ed8;
+    }
+
+    .feedback {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-weight: 700;
+      display: none;
+    }
+
+    .feedback.correct {
+      display: block;
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #6ee7b7;
+    }
+
+    .feedback.incorrect {
+      display: block;
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+
+    .answer-box {
+      display: none;
+      margin-top: 12px;
+      padding: 14px;
+      border-radius: 14px;
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+    }
+
+    .answer-box.show {
+      display: block;
+    }
+
+    .answer-line {
+      font-weight: 800;
+      color: #b91c1c;
+      margin-bottom: 8px;
+    }
+
+    .explain-title {
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .helper {
+      color: var(--sub);
+      font-size: 0.95rem;
+      margin-top: 8px;
+    }
+
+    .section-title {
+      margin: 30px 0 14px;
+      font-size: 1.3rem;
+      font-weight: 800;
+    }
+
+    .cards-wrap {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 14px;
+    }
+
+    .flip-card {
+      perspective: 1200px;
+      min-height: 220px;
+    }
+
+    .flip-card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 220px;
+      text-align: left;
+      transition: transform 0.7s;
+      transform-style: preserve-3d;
+      cursor: pointer;
+    }
+
+    .flip-card.flipped .flip-card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .flip-face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      min-height: 220px;
+      backface-visibility: hidden;
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .flip-front {
+      background: linear-gradient(135deg, #eef4ff, #ffffff);
+      border: 1px solid #dbeafe;
+    }
+
+    .flip-back {
+      background: linear-gradient(135deg, #fff7ed, #ffffff);
+      border: 1px solid #fed7aa;
+      transform: rotateY(180deg);
+    }
+
+    .flip-q {
+      font-size: 1.05rem;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .flip-sub {
+      color: var(--sub);
+      font-size: 0.95rem;
+    }
+
+    .flip-answer {
+      font-weight: 800;
+      color: #b45309;
+      margin-bottom: 10px;
+    }
+
+    .footer-note {
+      margin-top: 26px;
+      padding: 16px;
+      border-radius: 14px;
+      background: #f8fafc;
+      color: var(--sub);
+      border: 1px solid #e5e7eb;
+    }
+
+    @media (max-width: 640px) {
+      body { padding: 14px; }
+      .hero { padding: 18px; }
+      .question-card { padding: 16px; }
+      .score-panel { padding: 12px; }
+      .score-right { width: 100%; }
+      .score-right .btn { flex: 1; }
+      .flip-card, .flip-card-inner, .flip-face { min-height: 240px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <section class="hero">
+      <h1>📘 CPPG 3주차 Day 4</h1>
+      <p>주제: 자동화된 결정 / 설명 요구권 / 검토 요구 / 공개사항 / 처리기한</p>
+
+      <div class="badge-box">
+        <div class="badge notice">
+          <b>📌 안내</b><br />
+          - 먼저 문제를 풀고 <b>채점하기</b>를 눌러 점수를 확인하세요.<br />
+          - 필요할 때만 <b>정답 + 해설 보기</b>를 눌러 복습하세요.
+        </div>
+        <div class="badge info">
+          <b>🧠 핵심 체크포인트</b><br />
+          - “완전히 자동화된 시스템”인지 여부<br />
+          - “권리·의무에 중대한 영향” 판단<br />
+          - 설명 요구 / 검토 요구 / 공개사항 / 30일 처리기한
+        </div>
+      </div>
+    </section>
+
+    <section class="score-panel">
+      <div class="score-left">
+        <div class="score-title">현재 점수: <span id="scoreText">0 / 5</span></div>
+        <div class="progress-wrap">
+          <div class="progress" id="progressBar"></div>
+        </div>
+      </div>
+      <div class="score-right">
+        <button class="btn btn-primary" onclick="gradeQuiz()">채점하기</button>
+        <button class="btn btn-secondary" onclick="toggleAllAnswers()">전체 정답/해설 보기</button>
+        <button class="btn btn-secondary" onclick="resetQuiz()">초기화</button>
+      </div>
+    </section>
+
+    <section class="quiz-list" id="quizList"></section>
+
+    <h2 class="section-title">📱 모바일 암기 모드 (카드 뒤집기)</h2>
+    <div class="helper">카드를 터치/클릭하면 정답과 핵심 포인트가 뒤집혀 보입니다.</div>
+    <section class="cards-wrap" id="flashcards"></section>
+
+    <div class="footer-note">
+      <b>활용 팁</b><br />
+      1) 문제를 먼저 풀고 → 2) 채점하기 → 3) 틀린 문제만 해설 보기 → 4) 플래시카드로 핵심 암기
+    </div>
+  </div>
+
+  <script>
+    const quizData = [
+      {
+        id: 1,
+        question: "다음 중 개인정보 보호법상 ‘자동화된 결정’에 해당하는 사례로 가장 적절한 것은?",
+        options: [
+          "AI가 산출한 점수를 참고하되 인사위원회가 최종 합격 여부를 결정하는 채용 절차",
+          "이용자가 보기만 하고 선택 여부는 스스로 결정하는 맞춤형 뉴스 추천",
+          "완전히 자동화된 시스템이 개인정보를 분석해 대출 거절을 최종 결정하는 경우",
+          "내부 검토 참고용으로만 사용하는 자동 점수 산출 결과",
+          "시스템이 초안을 작성하고 담당자가 내용을 직접 수정·승인하는 인사평가"
+        ],
+        answer: 2,
+        explanation: "자동화된 결정은 사람의 실질적이고 의미 있는 개입 없이 완전히 자동화된 시스템으로 개인정보를 처리하여 이루어지는 결정입니다. 또한 정보주체의 권리 또는 의무에 영향을 미치는 최종 결정이어야 합니다. 따라서 대출 거절처럼 완전 자동화 + 최종 불이익 결정인 ③이 가장 적절합니다.",
+        flash: "완전 자동화 + 최종 불이익 결정 = 자동화된 결정"
+      },
+      {
+        id: 2,
+        question: "다음 중 자동화된 결정에 대해 정보주체가 요구할 수 있는 권리 또는 절차 설명으로 옳지 않은 것은?",
+        options: [
+          "자동화된 결정의 기준 및 처리 과정 등에 대한 설명을 요구할 수 있다",
+          "개인정보처리자가 해당 의견을 반영할 수 있는지에 대한 검토를 요구할 수 있다",
+          "권리 또는 의무에 중대한 영향을 미치는 경우 해당 결정을 거부할 수 있다",
+          "자동화된 결정에 대해 언제나 아무 제한 없이 무조건 거부권이 인정된다",
+          "개인정보처리자는 관련 요구 방법과 절차를 공개해야 한다"
+        ],
+        answer: 3,
+        explanation: "거부권은 ‘권리 또는 의무에 중대한 영향을 미치는 경우’에 인정됩니다. 또한 동의·계약·법률 근거 등 일정한 경우에는 거부보다 설명 및 검토 요구만 가능한 구조가 제시됩니다. 따라서 ‘언제나 아무 제한 없이 무조건’은 틀린 설명입니다.",
+        flash: "거부권은 항상 무조건 X / 중대한 영향 여부가 핵심"
+      },
+      {
+        id: 3,
+        question: "개인정보처리자가 자동화된 결정에 대한 설명 요구를 받은 경우 제공해야 하는 설명 내용으로 가장 적절한 것은?",
+        options: [
+          "알고리즘의 전체 소스코드",
+          "모델의 수학적 계산식 전부",
+          "자동화된 결정의 결과, 주요 개인정보의 유형, 그 영향, 처리 절차",
+          "내부 보안정책과 개발 인력 정보를 모두 공개",
+          "자동화된 결정과 무관한 시스템 운영 문서"
+        ],
+        answer: 2,
+        explanation: "설명은 ‘간결하고 의미 있는 설명’이어야 하며, 시행령상 자동화된 결정의 결과, 사용된 주요 개인정보의 유형, 해당 유형이 미친 영향 등 주요 기준, 주요 개인정보 처리 과정 등 절차를 포함합니다. 소스코드 전체 공개가 요구되는 것은 아닙니다.",
+        flash: "설명 요구 = 결과 + 주요 개인정보 유형 + 영향 + 절차"
+      },
+      {
+        id: 4,
+        question: "다음 중 자동화된 결정 관련 공개사항으로 보기 어려운 것은?",
+        options: [
+          "자동화된 결정이 이루어진다는 사실과 그 목적",
+          "대상이 되는 정보주체의 범위",
+          "자동화된 결정에 사용되는 주요 개인정보의 유형과 자동화된 결정의 관계",
+          "자동화된 결정 과정에서의 고려사항 및 주요 개인정보의 처리 절차",
+          "알고리즘 개발자의 개인 연락처와 상세 이력"
+        ],
+        answer: 4,
+        explanation: "자동화된 결정 관련 공개사항에는 자동화된 결정 사실, 목적, 대상 정보주체의 범위, 주요 개인정보 유형과 관계, 처리 절차, 거부·설명·검토 요구 방법과 절차 등이 포함됩니다. 개발자의 개인 연락처와 상세 이력은 공개사항으로 제시되어 있지 않습니다.",
+        flash: "공개사항 = 사실·목적·범위·유형·절차·요구방법"
+      },
+      {
+        id: 5,
+        question: "다음 중 자동화된 결정 관련 요구에 대한 처리기한 설명으로 가장 적절한 것은?",
+        options: [
+          "항상 10일 이내 처리해야 하고 연장은 허용되지 않는다",
+          "요구를 받은 날부터 30일 이내에 조치해야 하며, 정당한 사유가 있으면 2회에 한해 각각 30일 범위 내 연장할 수 있다",
+          "요구를 받은 날부터 7일 이내 처리해야 한다",
+          "처리기한은 개인정보처리자가 임의로 정하면 된다",
+          "설명 요구는 처리기한이 없고 검토 요구만 기한이 있다"
+        ],
+        answer: 1,
+        explanation: "시행령은 거부·설명·검토 요구에 대한 조치를 받은 날부터 30일 이내 서면 등의 방법으로 해야 한다고 규정합니다. 다만 정당한 사유가 있으면 그 사유를 알리고 2회에 한해 각각 30일 범위 내에서 연장할 수 있습니다.",
+        flash: "기본 30일 + 정당한 사유 시 2회 연장 가능(각 30일 범위)"
+      }
+    ];
+
+    let allAnswersVisible = false;
+
+    function renderQuiz() {
+      const quizList = document.getElementById("quizList");
+      quizList.innerHTML = "";
+
+      quizData.forEach((q) => {
+        const card = document.createElement("article");
+        card.className = "question-card";
+        card.id = `question-${q.id}`;
+
+        const optionsHtml = q.options.map((opt, index) => `
+          <div class="option" data-question="${q.id}" data-option="${index}" onclick="selectOption(${q.id}, ${index})">
+            <div class="option-letter">${index + 1}.</div>
+            <div>${opt}</div>
+          </div>
+        `).join("");
+
+        card.innerHTML = `
+          <div class="question-meta">문제 ${q.id}</div>
+          <div class="question-title">Q${q.id}. ${q.question}</div>
+          <div class="options">${optionsHtml}</div>
+
+          <div class="feedback" id="feedback-${q.id}"></div>
+
+          <button class="btn btn-secondary" style="margin-top: 12px;" onclick="toggleAnswer(${q.id})">
+            정답 + 해설 보기
+          </button>
+
+          <div class="answer-box" id="answer-${q.id}">
+            <div class="answer-line">정답: ${q.answer + 1}번</div>
+            <div class="explain-title">해설</div>
+            <div>${q.explanation}</div>
+          </div>
+        `;
+        quizList.appendChild(card);
+      });
+    }
+
+    function renderFlashcards() {
+      const wrap = document.getElementById("flashcards");
+      wrap.innerHTML = "";
+
+      quizData.forEach(q => {
+        const card = document.createElement("div");
+        card.className = "flip-card";
+        card.innerHTML = `
+          <div class="flip-card-inner" onclick="flipCard(this.parentElement)">
+            <div class="flip-face flip-front">
+              <div class="flip-q">Q${q.id}. ${q.question}</div>
+              <div class="flip-sub">터치해서 핵심 보기</div>
+            </div>
+            <div class="flip-face flip-back">
+              <div class="flip-answer">정답: ${q.answer + 1}번</div>
+              <div>${q.flash}</div>
+            </div>
+          </div>
+        `;
+        wrap.appendChild(card);
+      });
+    }
+
+    function selectOption(questionId, optionIndex) {
+      const options = document.querySelectorAll(`.option[data-question="${questionId}"]`);
+      options.forEach(opt => opt.classList.remove("selected"));
+      const selected = document.querySelector(`.option[data-question="${questionId}"][data-option="${optionIndex}"]`);
+      if (selected) selected.classList.add("selected");
+    }
+
+    function getSelectedOption(questionId) {
+      const selected = document.querySelector(`.option[data-question="${questionId}"].selected`);
+      if (!selected) return null;
+      return Number(selected.getAttribute("data-option"));
+    }
+
+    function gradeQuiz() {
+      let score = 0;
+
+      quizData.forEach(q => {
+        const selected = getSelectedOption(q.id);
+        const card = document.getElementById(`question-${q.id}`);
+        const feedback = document.getElementById(`feedback-${q.id}`);
+
+        card.classList.remove("correct", "incorrect");
+        feedback.classList.remove("correct", "incorrect");
+
+        if (selected === null) {
+          feedback.textContent = "미선택: 답을 고른 뒤 다시 채점해보세요.";
+          feedback.classList.add("incorrect");
+          card.classList.add("incorrect");
+          return;
+        }
+
+        if (selected === q.answer) {
+          score++;
+          card.classList.add("correct");
+          feedback.textContent = "정답입니다! ✅";
+          feedback.classList.add("correct");
+        } else {
+          card.classList.add("incorrect");
+          feedback.textContent = `오답입니다. ❌ (선택: ${selected + 1}번 / 정답: ${q.answer + 1}번)`;
+          feedback.classList.add("incorrect");
+        }
+      });
+
+      updateScore(score);
+      syncFeedbackVisibility();
+    }
+
+    function updateScore(score) {
+      const total = quizData.length;
+      const percent = (score / total) * 100;
+      document.getElementById("scoreText").textContent = `${score} / ${total}`;
+      document.getElementById("progressBar").style.width = `${percent}%`;
+    }
+
+    function toggleAnswer(questionId) {
+      const box = document.getElementById(`answer-${questionId}`);
+      box.classList.toggle("show");
+    }
+
+    function toggleAllAnswers() {
+      allAnswersVisible = !allAnswersVisible;
+      quizData.forEach(q => {
+        const box = document.getElementById(`answer-${q.id}`);
+        if (allAnswersVisible) {
+          box.classList.add("show");
+        } else {
+          box.classList.remove("show");
+        }
+      });
+    }
+
+    function resetQuiz() {
+      document.querySelectorAll(".option").forEach(opt => opt.classList.remove("selected"));
+
+      quizData.forEach(q => {
+        const card = document.getElementById(`question-${q.id}`);
+        const feedback = document.getElementById(`feedback-${q.id}`);
+        const answer = document.getElementById(`answer-${q.id}`);
+
+        card.classList.remove("correct", "incorrect");
+        feedback.classList.remove("correct", "incorrect");
+        feedback.textContent = "";
+        feedback.style.display = "none";
+        answer.classList.remove("show");
+      });
+
+      document.querySelectorAll(".flip-card").forEach(card => card.classList.remove("flipped"));
+
+      allAnswersVisible = false;
+      updateScore(0);
+    }
+
+    function flipCard(cardEl) {
+      cardEl.classList.toggle("flipped");
+    }
+
+    function syncFeedbackVisibility() {
+      quizData.forEach(q => {
+        const feedback = document.getElementById(`feedback-${q.id}`);
+        if (!feedback) return;
+        if (feedback.classList.contains("correct") || feedback.classList.contains("incorrect")) {
+          feedback.style.display = "block";
+        } else {
+          feedback.style.display = "none";
+        }
+      });
+    }
+
+    renderQuiz();
+    renderFlashcards();
+  </script>
+</body>
+</html>
