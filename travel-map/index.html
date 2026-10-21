@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#fff7ed" />
+  <meta name="apple-mobile-web-app-title" content="여행 지도" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <title>도하랑 여행 지도</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #fff7ed;
+      --card: #ffffff;
+      --text: #3f2d20;
+      --sub: #8a7565;
+      --line: #f0e3d4;
+      --land: #f3ece3;
+      --sea: #eaf5fb;
+      --primary: #f97316;
+      --primary-dark: #ea580c;
+      --danger: #ef4444;
+      --shadow: 0 8px 24px rgba(120, 72, 30, 0.10);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button { font: inherit; color: inherit; cursor: pointer; }
+
+    /* 상단 */
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 14px 20px;
+      padding-top: max(14px, env(safe-area-inset-top));
+    }
+
+    .top h1 {
+      margin: 0;
+      font-size: 1.45rem;
+      outline: none;
+      border-bottom: 2px dashed transparent;
+    }
+
+    .top h1:focus { border-bottom-color: var(--primary); }
+
+    .summary { color: var(--sub); font-size: 0.95rem; }
+    .summary b { color: var(--primary-dark); }
+
+    /* 레이아웃 */
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 16px;
+      padding: 0 16px max(16px, env(safe-area-inset-bottom));
+      height: calc(100vh - 64px);
+      height: calc(100dvh - 64px);
+    }
+
+    .map-wrap {
+      position: relative;
+      background: var(--sea);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      min-height: 420px;
+    }
+
+    #map {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      user-select: none;
+    }
+
+    .region { cursor: pointer; transition: fill 0.25s; }
+    .region:hover { filter: brightness(0.94); }
+    .sticker { cursor: grab; }
+    .sticker.dragging { cursor: grabbing; }
+
+    /* 도구 */
+    .toolbar {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .toolbar > * { pointer-events: auto; }
+
+    .modes {
+      display: inline-flex;
+      align-self: flex-start;
+      background: var(--card);
+      border-radius: 999px;
+      padding: 4px;
+      box-shadow: var(--shadow);
+    }
+
+    .modes button {
+      border: 0;
+      background: transparent;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+
+    .modes button.on { background: var(--primary); color: #fff; }
+
+    .tray {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-self: flex-start;
+      max-width: 300px;
+      background: var(--card);
+      border-radius: 16px;
+      padding: 6px;
+      box-shadow: var(--shadow);
+      scrollbar-width: none;
+    }
+
+    .tray.hidden { display: none; }
+
+    .swatch, .emoji-btn {
+      flex: 0 0 auto;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      display: grid;
+      place-items: center;
+      background: transparent;
+      padding: 0;
+    }
+
+    .swatch.on, .emoji-btn.on { border-color: var(--text); }
+    .emoji-btn { font-size: 20px; border-radius: 12px; }
+    .emoji-btn.on { background: #fff1e0; }
+    .swatch.eraser { background: #fff; border: 2px dashed #c9b6a5; font-size: 16px; }
+    .swatch.eraser.on { border: 3px solid var(--text); }
+
+    .hint {
+      position: absolute;
+      left: 12px;
+      bottom: 12px;
+      max-width: calc(100% - 80px);
+      background: rgba(255, 255, 255, 0.9);
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      color: var(--sub);
+      z-index: 2;
+    }
+
+    .zoom-ctl {
+      position: absolute;
+      right: 12px;
+      bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 2;
+    }
+
+    .zoom-ctl button {
+      width: 40px;
+      height: 40px;
+      border: 0;
+      border-radius: 12px;
+      background: var(--card);
+      box-shadow: var(--shadow);
+      font-size: 1.1rem;
+    }
+
+    .tooltip {
+      position: absolute;
+      pointer-events: none;
+      background: var(--text);
+      color: #fff;
+      font-size: 0.82rem;
+      padding: 5px 9px;
+      border-radius: 8px;
+      white-space: nowrap;
+      opacity: 0;
+      transform: translate(-50%, -130%);
+      z-index: 3;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translate(-50%, 20px);
+      background: var(--text);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      opacity: 0;
+      transition: 0.25s;
+      pointer-events: none;
+      z-index: 20;
+      max-width: calc(100vw - 32px);
+      text-align: center;
+    }
+
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    /* 오른쪽 패널 */
+    .panel {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow-y: auto;
+      min-height: 0;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+
+    .card h2 { margin: 0 0 10px; font-size: 1rem; }
+
+    .big-num { font-size: 1.8rem; font-weight: 800; }
+    .big-num small { font-size: 0.95rem; color: var(--sub); font-weight: 500; }
+
+    .bar {
+      height: 12px;
+      background: var(--line);
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 8px 0 12px;
+    }
+
+    .bar > div {
+      height: 100%;
+      background: linear-gradient(90deg, #fdba74, var(--primary));
+      border-radius: 999px;
+      transition: width 0.4s;
+    }
+
+    .chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+
+    .chip {
+      border: 0;
+      border-radius: 10px;
+      padding: 6px 4px;
+      font-size: 0.8rem;
+      background: #faf5ef;
+      color: var(--sub);
+      text-align: center;
+    }
+
+    .chip.on { background: #ffedd5; color: var(--primary-dark); font-weight: 700; }
+
+    .records { list-style: none; margin: 0; padding: 0; }
+
+    .records li {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 10px 6px;
+      border-top: 1px solid var(--line);
+      cursor: pointer;
+      border-radius: 10px;
+    }
+
+    .records li:first-child { border-top: 0; }
+    .records li:hover { background: #fffaf4; }
+
+    .rec-icon {
+      flex: 0 0 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+      border-radius: 50%;
+    }
+
+    .rec-body { flex: 1; min-width: 0; }
+    .rec-title { font-weight: 600; }
+    .rec-sub { font-size: 0.8rem; color: var(--sub); }
+
+    .rec-memo {
+      font-size: 0.85rem;
+      margin-top: 2px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .empty { color: var(--sub); font-size: 0.9rem; text-align: center; padding: 12px 0; }
+
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    .btn {
+      border: 0;
+      border-radius: 12px;
+      padding: 10px;
+      background: #faf5ef;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .btn.primary { background: var(--primary); color: #fff; }
+    .btn.danger { color: var(--danger); }
+
+    /* 대화상자 */
+    dialog {
+      border: 0;
+      border-radius: 22px;
+      padding: 20px;
+      width: min(420px, calc(100vw - 32px));
+      box-shadow: 0 20px 60px rgba(60, 30, 10, 0.25);
+      color: var(--text);
+    }
+
+    dialog::backdrop { background: rgba(63, 45, 32, 0.35); }
+    dialog h3 { margin: 0 0 4px; font-size: 1.2rem; }
+    dialog .sub { color: var(--sub); font-size: 0.85rem; margin-bottom: 14px; }
+
+    dialog label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--sub);
+      margin-bottom: 12px;
+    }
+
+    dialog input[type="text"], dialog input[type="date"], dialog textarea {
+      display: block;
+      width: 100%;
+      margin-top: 4px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      font: inherit;
+      color: var(--text);
+      background: #fffdfb;
+    }
+
+    dialog textarea { resize: vertical; }
+    .pick-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 14px; }
+    .dlg-actions { display: flex; gap: 8px; align-items: center; }
+    .dlg-actions .spacer { flex: 1; }
+
+    @media (max-width: 860px) {
+      .layout { grid-template-columns: 1fr; height: auto; }
+      .map-wrap { height: 72vh; height: 72dvh; }
+      .panel { overflow: visible; }
+      .top h1 { font-size: 1.25rem; }
+      .tray { flex-wrap: nowrap; max-width: 100%; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <h1 id="title" contenteditable="true" spellcheck="false" title="눌러서 제목 바꾸기">도하랑 여행 지도</h1>
+    <div class="summary" id="summary"></div>
+  </header>
+
+  <main class="layout">
+    <section class="map-wrap">
+      <div class="toolbar">
+        <div class="modes">
+          <button data-mode="paint" class="on">🖍️ 색칠</button>
+          <button data-mode="sticker">⭐ 스티커</button>
+        </div>
+        <div class="tray" id="paintTray"></div>
+        <div class="tray hidden" id="stickerTray"></div>
+      </div>
+      <svg id="map" aria-label="대한민국 지도"></svg>
+      <div class="hint" id="hint"></div>
+      <div class="zoom-ctl">
+        <button id="zoomIn" aria-label="확대">＋</button>
+        <button id="zoomOut" aria-label="축소">－</button>
+        <button id="zoomReset" aria-label="전체 보기">⟲</button>
+      </div>
+      <div class="tooltip" id="tip"></div>
+    </section>
+
+    <aside class="panel">
+      <div class="card">
+        <h2>우리가 다녀온 곳</h2>
+        <div class="big-num" id="statRegions"></div>
+        <div class="bar"><div id="statBar"></div></div>
+        <div class="chips" id="provChips"></div>
+      </div>
+
+      <div class="card">
+        <h2>여행 기록</h2>
+        <ul class="records" id="records"></ul>
+      </div>
+
+      <div class="card">
+        <div class="actions">
+          <button class="btn primary" id="btnPng">📷 이미지 저장</button>
+          <button class="btn" id="btnExport">💾 백업 저장</button>
+          <button class="btn" id="btnImport">📂 백업 불러오기</button>
+          <button class="btn danger" id="btnReset">🗑 처음부터</button>
+        </div>
+        <input type="file" id="fileInput" accept="application/json,.json" hidden />
+      </div>
+    </aside>
+  </main>
+
+  <dialog id="regionDlg">
+    <form method="dialog">
+      <h3 id="rdTitle"></h3>
+      <div class="sub">색칠한 지역의 추억을 남겨 보세요</div>
+      <div class="pick-row" id="rdColors"></div>
+      <label>다녀온 날 <input type="date" name="date" /></label>
+      <label>메모 <textarea name="memo" rows="3" placeholder="예) 도하가 처음 바다를 본 곳!"></textarea></label>
+      <div class="dlg-actions">
+        <button class="btn danger" value="delete">색 지우기</button>
+        <span class="spacer"></span>
+        <button class="btn" value="cancel" formnovalidate>닫기</button>
+        <button class="btn primary" value="save">저장</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="stickerDlg">
+    <form method="dialog">
+      <h3 id="sdTitle"></h3>
+      <div class="sub" id="sdSub"></div>
+      <div class="pick-row" id="sdEmojis"></div>
+      <label>장소 이름 <input type="text" name="name" placeholder="예) 해운대 해수욕장" /></label>
+      <label>다녀온 날 <input type="date" name="date" /></label>
+      <label>메모 <textarea name="memo" rows="3" placeholder="예) 조개껍데기 줍기 대회 우승 🏆"></textarea></label>
+      <div class="dlg-actions">
+        <button class="btn danger" value="delete" id="sdDelete">떼어내기</button>
+        <span class="spacer"></span>
+        <button class="btn" value="cancel" formnovalidate>취소</button>
+        <button class="btn primary" value="save">붙이기</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+  <script type="module">
+    /* ===== 기본 설정 ===== */
+    const STORE_KEY = "dohaTravelMap.v1";
+    const W = 800, H = 820;
+    const LAND = "#f3ece3";
+
+    const PROVINCES = {
+      "11": "서울", "21": "부산", "22": "대구", "23": "인천", "24": "광주",
+      "25": "대전", "26": "울산", "29": "세종", "31": "경기", "32": "강원",
+      "33": "충북", "34": "충남", "35": "전북", "36": "전남", "37": "경북",
+      "38": "경남", "39": "제주"
+    };
+
+    const PALETTE = ["#fca5a5", "#fdba74", "#fde047", "#86efac", "#7dd3fc", "#c4b5fd", "#f9a8d4"];
+    const STICKERS = ["📍", "❤️", "⭐", "📸", "🍜", "☕", "🍦", "🏖️", "⛰️", "🏕️", "🎡", "🏯", "🌸", "🍁", "⛄", "🚂", "✈️", "🐟", "🎂", "👶"];
+
+    /* ===== 저장 ===== */
+    function emptyState() {
+      return { title: "도하랑 여행 지도", regions: {}, stickers: [] };
+    }
+
+    function isValidState(s) {
+      return s && typeof s === "object" && s.regions && typeof s.regions === "object" && Array.isArray(s.stickers);
+    }
+
+    function load() {
+      try {
+        const s = JSON.parse(localStorage.getItem(STORE_KEY));
+        if (isValidState(s)) return s;
+      } catch (e) { /* 저장소를 못 쓰는 환경이면 새로 시작 */ }
+      return emptyState();
+    }
+
+    function save() {
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* 무시 */ }
+    }
+
+    let state = load();
+    let mode = "paint";
+    let brush = PALETTE[1];
+    let selectedEmoji = STICKERS[0];
+    let zoomK = 1;
+
+    /* ===== 지역 만들기 =====
+       통계청 2013 경계를 여행용으로 다듬습니다.
+       - 일반구(수원시 장안구 등)는 시 단위로 합침
+       - 청원군은 2014년 통합된 청주시로 합침
+       - 군위군은 2023년 편입된 대구로 분류 */
+    // 출처: https://github.com/southkorea/southkorea-maps (커밋 고정)
+    const TOPO_URL = "https://raw.githubusercontent.com/southkorea/southkorea-maps/fe65e05e549d04083e52f380a7e9166a8ea0a01e/kostat/2013/json/skorea_municipalities_topo_simple.json";
+    let topo;
+    try {
+      topo = await (await fetch(TOPO_URL)).json();
+    } catch (e) {
+      document.getElementById("hint").textContent = "지도를 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침해 주세요.";
+      throw e;
+    }
+    const geoms = topo.objects.skorea_municipalities_geo.geometries;
+
+    function regionKey(p) {
+      const c = p.code;
+      if (c === "33310") return { id: "33010", name: "청주시" };
+      if (["31", "33", "34", "35", "37", "38"].includes(c.slice(0, 2)) && c[4] !== "0") {
+        const m = p.name.match(/^(.+?시)/);
+        return { id: c.slice(0, 4) + "0", name: m ? m[1] : p.name };
+      }
+      return { id: c, name: p.name };
+    }
+
+    function provOf(code) {
+      return code === "37310" ? "22" : code.slice(0, 2);
+    }
+
+    const regions = Array.from(d3.group(geoms, g => regionKey(g.properties).id), ([id, gs]) => {
+      const { name } = regionKey(gs[0].properties);
+      const prov = provOf(id);
+      return {
+        type: "Feature",
+        id,
+        properties: { id, name, prov, label: `${PROVINCES[prov]} ${name}` },
+        geometry: topojson.merge(topo, gs)
+      };
+    });
+    const regionById = new Map(regions.map(r => [r.id, r]));
+
+    /* ===== 지도 그리기 ===== */
+    const projection = d3.geoMercator().fitExtent([[24, 24], [W - 24, H - 64]], { type: "FeatureCollection", features: regions });
+    const path = d3.geoPath(projection);
+
+    const svg = d3.select("#map").attr("viewBox", `0 0 ${W} ${H}`);
+    const gRoot = svg.append("g");
+    const gRegions = gRoot.append("g");
+    const gBorders = gRoot.append("g");
+    const gStickers = gRoot.append("g");
+
+    gRegions.selectAll("path")
+      .data(regions)
+      .join("path")
+      .attr("class", "region")
+      .attr("d", path)
+      .attr("stroke", "#ffffff")
+      .attr("stroke-width", 0.6)
+      .attr("vector-effect", "non-scaling-stroke")
+      .on("mousemove", (e, d) => showTip(e, regionTip(d)))
+      .on("mouseleave", hideTip);
+
+    const obj = topo.objects.skorea_municipalities_geo;
+    gBorders.append("path")
+      .datum(topojson.mesh(topo, obj, (a, b) => a !== b && provOf(a.properties.code) !== provOf(b.properties.code)))
+      .attr("d", path)
+      .attr("fill", "none")
+      .attr("stroke", "#c9ad94")
+      .attr("stroke-width", 1.3)
+      .attr("vector-effect", "non-scaling-stroke")
+      .attr("pointer-events", "none");
+    gBorders.append("path")
+      .datum(topojson.mesh(topo, obj, (a, b) => a === b))
+      .attr("d", path)
+      .attr("fill", "none")
+      .attr("stroke", "#b79a80")
+      .attr("stroke-width", 1)
+      .attr("vector-effect", "non-scaling-stroke")
+      .attr("pointer-events", "none");
+
+    /* ===== 확대/이동 ===== */
+    const zoom = d3.zoom()
+      .scaleExtent([1, 14])
+      .translateExtent([[0, 0], [W, H]])
+      .clickDistance(5)
+      .on("zoom", e => {
+        zoomK = e.transform.k;
+        gRoot.attr("transform", e.transform);
+        gStickers.selectAll("g.sticker").attr("transform", stickerTransform);
+        hideTip();
+      });
+
+    svg.call(zoom).on("dblclick.zoom", null);
+    svg.on("click", onMapClick);
+
+    document.getElementById("zoomIn").onclick = () => svg.transition().duration(300).call(zoom.scaleBy, 1.6);
+    document.getElementById("zoomOut").onclick = () => svg.transition().duration(300).call(zoom.scaleBy, 1 / 1.6);
+    document.getElementById("zoomReset").onclick = () => svg.transition().duration(400).call(zoom.transform, d3.zoomIdentity);
+
+    function zoomToPoint([x, y], k) {
+      const t = d3.zoomIdentity.translate(W / 2, H / 2).scale(k).translate(-x, -y);
+      svg.transition().duration(600).call(zoom.transform, t);
+    }
+
+    function zoomToRegion(r) {
+      zoomToBounds(path.bounds(r));
+    }
+
+    function zoomToBounds([[x0, y0], [x1, y1]]) {
+      const k = Math.max(1, Math.min(8, 0.6 / Math.max((x1 - x0) / W, (y1 - y0) / H)));
+      zoomToPoint([(x0 + x1) / 2, (y0 + y1) / 2], k);
+    }
+
+    /* ===== 스티커 ===== */
+    function stickerXY(d) {
+      return projection([d.lng, d.lat]);
+    }
+
+    function stickerTransform(d) {
+      const [x, y] = stickerXY(d);
+      return `translate(${x},${y}) scale(${1 / zoomK})`;
+    }
+
+    const drag = d3.drag()
+      .clickDistance(4)
+      .subject((e, d) => {
+        const [x, y] = stickerXY(d);
+        return { x, y };
+      })
+      .on("start", function () {
+        d3.select(this).raise().classed("dragging", true);
+        hideTip();
+      })
+      .on("drag", function (e, d) {
+        [d.lng, d.lat] = projection.invert([e.x, e.y]);
+        d.moved = true;
+        d3.select(this).attr("transform", stickerTransform);
+      })
+      .on("end", function (e, d) {
+        d3.select(this).classed("dragging", false);
+        if (d.moved) {
+          delete d.moved;
+          save();
+        }
+      });
+
+    function renderStickers() {
+      gStickers.selectAll("g.sticker")
+        .data(state.stickers, d => d.id)
+        .join(enter => {
+          const g = enter.append("g").attr("class", "sticker");
+          g.append("circle")
+            .attr("r", 17)
+            .attr("fill", "#ffffff")
+            .attr("stroke", "#e7d6c5")
+            .attr("stroke-width", 1.5);
+          g.append("text")
+            .attr("text-anchor", "middle")
+            .attr("dy", "0.35em")
+            .attr("font-size", 19)
+            .attr("font-family", "'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif");
+          g.call(drag)
+            .on("click", (e, d) => {
+              e.stopPropagation();
+              openStickerDialog(d, false);
+            })
+            .on("mousemove", (e, d) => showTip(e, d.name || "이름 없는 장소"))
+            .on("mouseleave", hideTip);
+          return g;
+        })
+        .attr("transform", stickerTransform)
+        .select("text")
+        .text(d => d.emoji);
+    }
+
+    /* ===== 지도 클릭 ===== */
+    function onMapClick(e) {
+      const region = e.target.classList.contains("region") ? e.target.__data__ : null;
+
+      if (mode === "paint") {
+        if (region) paintRegion(region);
+        return;
+      }
+
+      const [lng, lat] = projection.invert(d3.pointer(e, gRoot.node()));
+      openStickerDialog({
+        id: null,
+        emoji: selectedEmoji,
+        lng,
+        lat,
+        regionId: region ? region.id : null,
+        name: "",
+        date: today(),
+        memo: ""
+      }, true);
+    }
+
+    function paintRegion(r) {
+      const cur = state.regions[r.id];
+      const label = r.properties.label;
+
+      if (brush === "eraser") {
+        if (cur) {
+          delete state.regions[r.id];
+          commit();
+          toast(`${label} 색을 지웠어요`);
+        }
+        return;
+      }
+
+      if (cur && cur.color === brush) {
+        openRegionDialog(r);
+        return;
+      }
+
+      state.regions[r.id] = { date: today(), memo: "", ...cur, color: brush };
+      commit();
+      toast(cur ? `${label} 색을 바꿨어요` : `${label} 색칠 완료! 한 번 더 누르면 메모를 남길 수 있어요`);
+    }
+
+    /* ===== 대화상자 ===== */
+    const regionDlg = document.getElementById("regionDlg");
+    const stickerDlg = document.getElementById("stickerDlg");
+    let editingRegion = null;
+    let editingSticker = null;
+
+    function fillPickRow(el, items, current, name, makeLabel) {
+      el.innerHTML = "";
+      items.forEach(v => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = name === "color" ? "swatch" : "emoji-btn";
+        if (name === "color") b.style.background = v;
+        else b.textContent = v;
+        b.title = makeLabel ? makeLabel(v) : v;
+        b.classList.toggle("on", v === current);
+        b.onclick = () => {
+          el.dataset.value = v;
+          el.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
+        };
+        el.appendChild(b);
+      });
+      el.dataset.value = current;
+    }
+
+    function openRegionDialog(r) {
+      editingRegion = r;
+      const rec = state.regions[r.id] || { color: brush === "eraser" ? PALETTE[1] : brush, date: today(), memo: "" };
+      document.getElementById("rdTitle").textContent = r.properties.label;
+      fillPickRow(document.getElementById("rdColors"), PALETTE, rec.color, "color");
+      const f = regionDlg.querySelector("form");
+      f.date.value = rec.date || "";
+      f.memo.value = rec.memo || "";
+      regionDlg.returnValue = "";
+      regionDlg.showModal();
+    }
+
+    regionDlg.addEventListener("close", () => {
+      const r = editingRegion;
+      const f = regionDlg.querySelector("form");
+      if (!r) return;
+      if (regionDlg.returnValue === "save") {
+        state.regions[r.id] = {
+          color: document.getElementById("rdColors").dataset.value,
+          date: f.date.value,
+          memo: f.memo.value.trim()
+        };
+        commit();
+      } else if (regionDlg.returnValue === "delete") {
+        delete state.regions[r.id];
+        commit();
+        toast(`${r.properties.label} 색을 지웠어요`);
+      }
+      editingRegion = null;
+    });
+
+    function openStickerDialog(s, isNew) {
+      editingSticker = { data: s, isNew };
+      const region = s.regionId ? regionById.get(s.regionId) : null;
+      document.getElementById("sdTitle").textContent = isNew ? "스티커 붙이기" : (s.name || "이름 없는 장소");
+      document.getElementById("sdSub").textContent = region ? region.properties.label : "바다 위 어딘가";
+      document.getElementById("sdDelete").style.display = isNew ? "none" : "";
+      stickerDlg.querySelector('button[value="save"]').textContent = isNew ? "붙이기" : "저장";
+      fillPickRow(document.getElementById("sdEmojis"), STICKERS, s.emoji, "emoji");
+      const f = stickerDlg.querySelector("form");
+      f.name.value = s.name || "";
+      f.date.value = s.date || "";
+      f.memo.value = s.memo || "";
+      stickerDlg.returnValue = "";
+      stickerDlg.showModal();
+      if (isNew) f.name.focus();
+    }
+
+    stickerDlg.addEventListener("close", () => {
+      if (!editingSticker) return;
+      const { data: s, isNew } = editingSticker;
+      const f = stickerDlg.querySelector("form");
+      editingSticker = null;
+
+      if (stickerDlg.returnValue === "save") {
+        s.emoji = document.getElementById("sdEmojis").dataset.value;
+        s.name = f.name.value.trim();
+        s.date = f.date.value;
+        s.memo = f.memo.value.trim();
+        if (isNew) {
+          s.id = uid();
+          state.stickers.push(s);
+          // 스티커를 붙인 지역이 비어 있으면 같이 색칠
+          if (s.regionId && !state.regions[s.regionId]) {
+            state.regions[s.regionId] = { color: brush === "eraser" ? PALETTE[1] : brush, date: s.date, memo: "" };
+          }
+          toast("스티커를 붙였어요! 끌어서 위치를 옮길 수 있어요");
+        }
+        commit();
+      } else if (stickerDlg.returnValue === "delete") {
+        state.stickers = state.stickers.filter(x => x.id !== s.id);
+        commit();
+        toast("스티커를 떼어냈어요");
+      }
+    });
+
+    /* ===== 도구 막대 ===== */
+    const paintTray = document.getElementById("paintTray");
+    const stickerTray = document.getElementById("stickerTray");
+
+    function buildTrays() {
+      PALETTE.forEach(c => {
+        const b = document.createElement("button");
+        b.className = "swatch";
+        b.style.background = c;
+        b.dataset.value = c;
+        b.title = "이 색으로 칠하기";
+        paintTray.appendChild(b);
+      });
+      const eraser = document.createElement("button");
+      eraser.className = "swatch eraser";
+      eraser.dataset.value = "eraser";
+      eraser.textContent = "🧽";
+      eraser.title = "지우개";
+      paintTray.appendChild(eraser);
+
+      STICKERS.forEach(s => {
+        const b = document.createElement("button");
+        b.className = "emoji-btn";
+        b.dataset.value = s;
+        b.textContent = s;
+        stickerTray.appendChild(b);
+      });
+
+      paintTray.onclick = e => {
+        const b = e.target.closest("button");
+        if (!b) return;
+        brush = b.dataset.value;
+        syncTools();
+      };
+      stickerTray.onclick = e => {
+        const b = e.target.closest("button");
+        if (!b) return;
+        selectedEmoji = b.dataset.value;
+        syncTools();
+      };
+      document.querySelectorAll(".modes button").forEach(b => {
+        b.onclick = () => {
+          mode = b.dataset.mode;
+          syncTools();
+        };
+      });
+    }
+
+    function syncTools() {
+      document.querySelectorAll(".modes button").forEach(b => b.classList.toggle("on", b.dataset.mode === mode));
+      paintTray.classList.toggle("hidden", mode !== "paint");
+      stickerTray.classList.toggle("hidden", mode !== "sticker");
+      paintTray.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.value === brush));
+      stickerTray.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.value === selectedEmoji));
+      document.getElementById("hint").textContent = mode === "paint"
+        ? (brush === "eraser" ? "지울 지역을 눌러 주세요" : "다녀온 지역을 눌러 색칠해요 · 같은 색으로 한 번 더 누르면 메모")
+        : `${selectedEmoji} 다녀온 장소를 눌러 스티커를 붙여요 · 붙인 스티커는 끌어서 옮길 수 있어요`;
+    }
+
+    /* ===== 패널 ===== */
+    function renderPanel() {
+      const visited = regions.filter(r => state.regions[r.id]);
+      const pct = Math.round((visited.length / regions.length) * 100);
+      const visitedProv = new Set(visited.map(r => r.properties.prov));
+
+      document.getElementById("statRegions").innerHTML =
+        `${visited.length}<small> / ${regions.length} 시·군·구 (${pct}%)</small>`;
+      document.getElementById("statBar").style.width = `${pct}%`;
+      document.getElementById("summary").innerHTML =
+        `시·도 <b>${visitedProv.size}</b>/17 · 시·군·구 <b>${visited.length}</b> · 스티커 <b>${state.stickers.length}</b>개`;
+
+      const chips = document.getElementById("provChips");
+      chips.innerHTML = "";
+      Object.entries(PROVINCES).forEach(([code, name]) => {
+        const all = regions.filter(r => r.properties.prov === code);
+        const done = all.filter(r => state.regions[r.id]).length;
+        const b = document.createElement("button");
+        b.className = "chip" + (done ? " on" : "");
+        b.textContent = `${name} ${done}/${all.length}`;
+        b.onclick = () => {
+          const bounds = all.map(r => path.bounds(r));
+          const x0 = d3.min(bounds, b => b[0][0]), y0 = d3.min(bounds, b => b[0][1]);
+          const x1 = d3.max(bounds, b => b[1][0]), y1 = d3.max(bounds, b => b[1][1]);
+          zoomToBounds([[x0, y0], [x1, y1]]);
+        };
+        chips.appendChild(b);
+      });
+
+      const items = [
+        ...state.stickers.map(s => ({ kind: "sticker", date: s.date || "", s })),
+        ...visited.map(r => ({ kind: "region", date: state.regions[r.id].date || "", r }))
+      ].sort((a, b) => b.date.localeCompare(a.date));
+
+      const list = document.getElementById("records");
+      list.innerHTML = "";
+      if (!items.length) {
+        list.innerHTML = '<li class="empty">아직 기록이 없어요. 지도에서 다녀온 곳을 눌러 보세요!</li>';
+        return;
+      }
+
+      items.forEach(it => {
+        const li = document.createElement("li");
+        const icon = document.createElement("div");
+        icon.className = "rec-icon";
+        const body = document.createElement("div");
+        body.className = "rec-body";
+        const title = document.createElement("div");
+        title.className = "rec-title";
+        const sub = document.createElement("div");
+        sub.className = "rec-sub";
+        const memo = document.createElement("div");
+        memo.className = "rec-memo";
+
+        if (it.kind === "sticker") {
+          const s = it.s;
+          const region = s.regionId ? regionById.get(s.regionId) : null;
+          icon.textContent = s.emoji;
+          icon.style.background = "#fff1e0";
+          title.textContent = s.name || "이름 없는 장소";
+          sub.textContent = [region && region.properties.label, s.date].filter(Boolean).join(" · ");
+          memo.textContent = s.memo || "";
+          li.onclick = () => {
+            zoomToPoint(stickerXY(s), Math.max(zoomK, 5));
+            openStickerDialog(s, false);
+          };
+        } else {
+          const rec = state.regions[it.r.id];
+          icon.style.background = rec.color;
+          title.textContent = it.r.properties.label;
+          sub.textContent = rec.date || "날짜 없음";
+          memo.textContent = rec.memo || "";
+          li.onclick = () => {
+            zoomToRegion(it.r);
+            openRegionDialog(it.r);
+          };
+        }
+
+        body.append(title, sub);
+        if (memo.textContent) body.append(memo);
+        li.append(icon, body);
+        list.appendChild(li);
+      });
+    }
+
+    function renderRegions() {
+      gRegions.selectAll("path.region").attr("fill", d => (state.regions[d.id] ? state.regions[d.id].color : LAND));
+    }
+
+    function render() {
+      document.getElementById("title").textContent = state.title || "도하랑 여행 지도";
+      document.title = state.title || "도하랑 여행 지도";
+      renderRegions();
+      renderStickers();
+      renderPanel();
+    }
+
+    function commit() {
+      save();
+      render();
+    }
+
+    /* ===== 제목 ===== */
+    const titleEl = document.getElementById("title");
+    titleEl.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        titleEl.blur();
+      }
+    });
+    titleEl.addEventListener("blur", () => {
+      state.title = titleEl.textContent.trim() || "도하랑 여행 지도";
+      commit();
+    });
+
+    /* ===== 백업 / 이미지 ===== */
+    function download(blob, filename) {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }
+
+    document.getElementById("btnExport").onclick = () => {
+      download(new Blob([JSON.stringify(state, null, 2)], { type: "application/json" }), `travel-map-${today()}.json`);
+      toast("백업 파일을 저장했어요. 다른 기기에서 '백업 불러오기'로 열 수 있어요");
+    };
+
+    const fileInput = document.getElementById("fileInput");
+    document.getElementById("btnImport").onclick = () => fileInput.click();
+    fileInput.onchange = async () => {
+      const file = fileInput.files[0];
+      fileInput.value = "";
+      if (!file) return;
+      try {
+        const s = JSON.parse(await file.text());
+        if (!isValidState(s)) throw new Error("형식 오류");
+        if (!confirm("지금 지도를 백업 파일 내용으로 바꿀까요?")) return;
+        state = s;
+        commit();
+        toast("백업을 불러왔어요");
+      } catch (e) {
+        alert("여행 지도 백업 파일이 아니에요.");
+      }
+    };
+
+    document.getElementById("btnReset").onclick = () => {
+      if (!confirm("색칠과 스티커를 모두 지울까요? (먼저 '백업 저장'을 권해요)")) return;
+      state = emptyState();
+      commit();
+    };
+
+    document.getElementById("btnPng").onclick = exportPng;
+
+    function exportPng() {
+      const clone = svg.node().cloneNode(true);
+      clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+      clone.setAttribute("width", W);
+      clone.setAttribute("height", H);
+      clone.querySelector("g").removeAttribute("transform");
+
+      // 화면 확대 상태와 관계없이 전체 지도 + 보기 좋은 스티커 크기로
+      const originals = gStickers.selectAll("g.sticker").nodes();
+      clone.querySelectorAll("g.sticker").forEach((n, i) => {
+        const [x, y] = stickerXY(originals[i].__data__);
+        n.setAttribute("transform", `translate(${x},${y}) scale(0.8)`);
+      });
+
+      const ns = "http://www.w3.org/2000/svg";
+      const bg = document.createElementNS(ns, "rect");
+      bg.setAttribute("width", W);
+      bg.setAttribute("height", H);
+      bg.setAttribute("fill", "#eaf5fb");
+      clone.insertBefore(bg, clone.firstChild);
+
+      const font = "'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif";
+      const visited = regions.filter(r => state.regions[r.id]).length;
+      [[state.title || "도하랑 여행 지도", 44, 30, 800], [`시·군·구 ${visited}곳 · 스티커 ${state.stickers.length}개`, 76, 17, 500]]
+        .forEach(([text, y, size, weight]) => {
+          const t = document.createElementNS(ns, "text");
+          t.setAttribute("x", 28);
+          t.setAttribute("y", y);
+          t.setAttribute("font-size", size);
+          t.setAttribute("font-weight", weight);
+          t.setAttribute("font-family", font);
+          t.setAttribute("fill", "#3f2d20");
+          t.textContent = text;
+          clone.appendChild(t);
+        });
+
+      const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(clone)], { type: "image/svg+xml" }));
+      const img = new Image();
+      img.onload = () => {
+        const scale = 2;
+        const canvas = document.createElement("canvas");
+        canvas.width = W * scale;
+        canvas.height = H * scale;
+        const ctx = canvas.getContext("2d");
+        ctx.scale(scale, scale);
+        ctx.drawImage(img, 0, 0, W, H);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(blob => download(blob, `travel-map-${today()}.png`), "image/png");
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        alert("이미지를 만들지 못했어요. 화면 캡처를 이용해 주세요.");
+      };
+      img.src = url;
+    }
+
+    /* ===== 작은 도우미 ===== */
+    const tip = document.getElementById("tip");
+    const mapWrap = document.querySelector(".map-wrap");
+
+    function regionTip(r) {
+      const rec = state.regions[r.id];
+      return rec && rec.date ? `${r.properties.label} · ${rec.date}` : r.properties.label;
+    }
+
+    function showTip(e, text) {
+      const box = mapWrap.getBoundingClientRect();
+      tip.textContent = text;
+      tip.style.left = `${e.clientX - box.left}px`;
+      tip.style.top = `${e.clientY - box.top}px`;
+      tip.style.opacity = 1;
+    }
+
+    function hideTip() {
+      tip.style.opacity = 0;
+    }
+
+    let toastTimer;
+    function toast(msg) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove("show"), 2600);
+    }
+
+    function today() {
+      const d = new Date();
+      return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+    }
+
+    function uid() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    }
+
+    buildTrays();
+    syncTools();
+    render();
+  </script>
+</body>
+</html>
