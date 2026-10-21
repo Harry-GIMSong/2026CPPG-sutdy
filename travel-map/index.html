@@ -461,8 +461,7 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
-  <script src="korea-topo.js"></script>
-  <script>
+  <script type="module">
     /* ===== 기본 설정 ===== */
     const STORE_KEY = "dohaTravelMap.v1";
     const W = 800, H = 820;
@@ -510,7 +509,15 @@
        - 일반구(수원시 장안구 등)는 시 단위로 합침
        - 청원군은 2014년 통합된 청주시로 합침
        - 군위군은 2023년 편입된 대구로 분류 */
-    const topo = window.KOREA_TOPO;
+    // 출처: https://github.com/southkorea/southkorea-maps (커밋 고정)
+    const TOPO_URL = "https://raw.githubusercontent.com/southkorea/southkorea-maps/fe65e05e549d04083e52f380a7e9166a8ea0a01e/kostat/2013/json/skorea_municipalities_topo_simple.json";
+    let topo;
+    try {
+      topo = await (await fetch(TOPO_URL)).json();
+    } catch (e) {
+      document.getElementById("hint").textContent = "지도를 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침해 주세요.";
+      throw e;
+    }
     const geoms = topo.objects.skorea_municipalities_geo.geometries;
 
     function regionKey(p) {
