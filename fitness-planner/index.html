@@ -468,20 +468,21 @@ const FIG = (function(){
   const NS = 'http://www.w3.org/2000/svg';
   const dir = a=>{a*=Math.PI/180;return [Math.sin(a),Math.cos(a)];};
   const mv = (o,a,len)=>{const d=dir(a);return [o[0]+d[0]*len,o[1]+d[1]*len];};
-  function joints(p, front){
-    const J={hip:[0,0]};
-    J.neck=mv(J.hip,p.t,40); J.head=mv(J.neck,p.h,11);
-    J.e1=mv(J.neck,p.a1,22); J.w1=mv(J.e1,p.f1,20);
-    J.e2=mv(J.neck,p.a2,22); J.w2=mv(J.e2,p.f2,20);
-    J.k1=mv(J.hip,p.l1,26); J.n1=mv(J.k1,p.s1,26);
-    J.k2=mv(J.hip,p.l2,26); J.n2=mv(J.k2,p.s2,26);
+  const LEN={t:40,hd:11,a:22,f:20,l:26,s:26};
+  function joints(p, front, L){
+    L=L||LEN; const J={hip:[0,0]};
+    J.neck=mv(J.hip,p.t,L.t); J.head=mv(J.neck,p.h,L.hd);
+    J.e1=mv(J.neck,p.a1,L.a); J.w1=mv(J.e1,p.f1,L.f);
+    J.e2=mv(J.neck,p.a2,L.a); J.w2=mv(J.e2,p.f2,L.f);
+    J.k1=mv(J.hip,p.l1,L.l); J.n1=mv(J.k1,p.s1,L.s);
+    J.k2=mv(J.hip,p.l2,L.l); J.n2=mv(J.k2,p.s2,L.s);
     if(!front){J.t1=mv(J.n1,p.s1+(p.pt?28:90),7); J.t2=mv(J.n2,p.s2+(p.pt?28:90),7);}
     return J;
   }
   function full(p){const q=Object.assign({},POSE0,p);if(q.h==null)q.h=q.t;return q;}
   // 키프레임별 엉덩이 위치(바닥 접지 + 고정점)
-  function place(p, front){
-    const J=joints(p,front);
+  function place(p, front, L){
+    const J=joints(p,front,L);
     let maxY=-1e9;
     for(const k in J){if(k==='head')continue;maxY=Math.max(maxY,J[k][1]);}
     maxY=Math.max(maxY,J.head[1]+HR);
@@ -493,7 +494,7 @@ const FIG = (function(){
   function lerpAng(a,b,u){let d=((b-a)%360+540)%360-180;return a+d*u;}
   function prep(id){
     const v=VIS[id]; if(!v)return null;
-    if(!v._k){v._k=v.f.map(full);v._pos=v._k.map(p=>place(p,v.v==='front'));}
+    if(!v._k){v._L=Object.assign({},LEN,v.L);v._k=v.f.map(full);v._pos=v._k.map(p=>place(p,v.v==='front',v._L));}
     return v;
   }
   function poseAt(v,time){
@@ -521,8 +522,9 @@ const FIG = (function(){
     const props=v.props||[];
     if(props.includes('mat'))el('rect',{x:14,y:G+3,width:172,height:5,rx:2.5,'class':'fig-mat'},svg);
     el('line',{x1:6,y1:G+4,x2:194,y2:G+4,'class':'fig-floor'},svg);
-    const p0=v._k[0],J0=joints(p0,front),o0=v._pos[0];
+    const p0=v._k[0],J0=joints(p0,front,v._L),o0=v._pos[0];
     if(props.includes('wall')){const wx=o0[0]-6;el('line',{x1:wx,y1:8,x2:wx,y2:G+4,'class':'fig-prop'},svg);}
+    if(props.includes('wallR')){const wx=J0.w1[0]+o0[0]+5;el('line',{x1:wx,y1:8,x2:wx,y2:G+4,'class':'fig-prop'},svg);}
     if(props.includes('chair')){const hx=J0.w1[0]+o0[0],hy=J0.w1[1]+o0[1]+4;
       el('path',{d:`M${hx-30} ${hy}H${hx+2}M${hx-26} ${hy}V${G+4}M${hx-2} ${hy}V${G+4}M${hx-30} ${hy}V${hy-34}`,'class':'fig-prop'},svg);}
     const far=el('g',{'class':'fig-far'},svg), near=el('g',{'class':'fig-near'},svg);
@@ -530,7 +532,7 @@ const FIG = (function(){
     const P={arm2:pl(far),leg2:pl(far),torso:el('path',{fill:'none'},near),leg1:pl(near),arm1:pl(near),head:el('circle',{r:HR,'class':'fig-head'},near)};
     const fmt=pts=>pts.map(q=>q[0].toFixed(1)+','+q[1].toFixed(1)).join(' ');
     function draw(time){
-      const {p,pos}=poseAt(v,time), J=joints(p,front);
+      const {p,pos}=poseAt(v,time), J=joints(p,front,v._L);
       const T=q=>[q[0]+pos[0],q[1]+pos[1]];
       const hip=T(J.hip),neck=T(J.neck),head=T(J.head);
       P.arm1.setAttribute('points',fmt([neck,T(J.e1),T(J.w1)]));
