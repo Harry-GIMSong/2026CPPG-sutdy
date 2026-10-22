@@ -355,6 +355,11 @@
     .year-group .records { margin-bottom: 6px; }
 
     .more-btn { width: 100%; margin-top: 8px; }
+    .visit-list { max-height: 45vh; overflow-y: auto; }
+
+    .view-tabs { display: flex; background: #faf5ef; border-radius: 999px; padding: 3px; margin-bottom: 6px; }
+    .view-tabs button { flex: 1; border: 0; background: transparent; padding: 7px; border-radius: 999px; font-weight: 600; font-size: 0.88rem; color: var(--sub); }
+    .view-tabs button.on { background: #fff; color: var(--text); box-shadow: 0 1px 4px rgba(120, 72, 30, 0.12); }
 
     .records li {
       display: flex;
@@ -530,17 +535,29 @@
   </main>
 
   <dialog id="regionDlg">
-    <form method="dialog">
+    <form method="dialog" id="rdForm">
       <h3 id="rdTitle"></h3>
-      <div class="sub">누구와 다녀왔나요? (여러 번 갔다면 여러 개 골라요)</div>
-      <div class="pick-row" id="rdGroups"></div>
-      <label>다녀온 날 <input type="date" name="date" /></label>
-      <label>메모 <textarea name="memo" rows="3" placeholder="예) 도하가 처음 바다를 본 곳!"></textarea></label>
-      <div class="dlg-actions">
-        <button class="btn danger" value="delete">색 지우기</button>
-        <span class="spacer"></span>
-        <button class="btn" value="cancel" formnovalidate>닫기</button>
-        <button class="btn primary" value="save">저장</button>
+      <div id="rdList">
+        <div class="sub" id="rdCount"></div>
+        <ul class="records visit-list" id="rdVisits"></ul>
+        <button type="button" class="btn primary" id="rdAdd" style="width: 100%; margin: 6px 0 14px;">＋ 또 다녀왔어요</button>
+        <div class="dlg-actions">
+          <button type="button" class="btn danger" id="rdClear">모두 지우기</button>
+          <span class="spacer"></span>
+          <button class="btn" value="close" formnovalidate>닫기</button>
+        </div>
+      </div>
+      <div id="rdEdit" hidden>
+        <div class="sub" id="rdEditSub">누구와 다녀왔나요?</div>
+        <div class="pick-row" id="rdGroups"></div>
+        <label>다녀온 날 <input type="date" name="date" /></label>
+        <label>메모 <textarea name="memo" rows="3" placeholder="예) 도하가 처음 바다를 본 곳!"></textarea></label>
+        <div class="dlg-actions">
+          <button type="button" class="btn danger" id="rdDelete">이 기록 삭제</button>
+          <span class="spacer"></span>
+          <button type="button" class="btn" id="rdBack">뒤로</button>
+          <button type="button" class="btn primary" id="rdSave">저장</button>
+        </div>
       </div>
     </form>
   </dialog>
@@ -894,23 +911,22 @@
 
       if (brush === "eraser") {
         if (cur) {
+          const n = visitsOf(cur).length;
+          if (n > 1 && !confirm(`${label}의 다녀온 기록 ${n}개를 모두 지울까요?`)) return;
           setRegion(r.id, null);
           toast(`${label} 색을 지웠어요`);
         }
         return;
       }
 
-      const have = cur ? recGroups(cur) : [];
-      if (have.includes(brush)) {
+      // 이미 칠한 지역은 방문 기록 목록을 열어 또 다녀온 기록을 더할 수 있게
+      if (cur) {
         openRegionDialog(r);
         return;
       }
 
-      // 다른 동행과 또 갔다면 덧칠(줄무늬)합니다
-      const next = { date: today(), memo: "", ...cur, groups: [...have, brush] };
-      delete next.color;
-      setRegion(r.id, next);
-      toast(cur ? `${label}: ${groupNames(next)}` : `${label} 색칠 완료! 한 번 더 누르면 메모를 남길 수 있어요`);
+      putVisit(r.id, { id: uid(), group: brush, date: today(), memo: "" });
+      toast(`${label} 색칠 완료! 한 번 더 누르면 메모를 남기거나 또 다녀온 기록을 더해요`);
     }
 
     /* ===== 대화상자 ===== */
@@ -938,43 +954,95 @@
       el.dataset.value = current;
     }
 
-    function openRegionDialog(r) {
+    const rdForm = document.getElementById("rdForm");
+    const rdList = document.getElementById("rdList");
+    const rdEdit = document.getElementById("rdEdit");
+    let editingVisit = null;
+
+    function openRegionDialog(r, visitId) {
       editingRegion = r;
-      const rec = state.regions[r.id] || { groups: brush === "eraser" ? [] : [brush], date: today(), memo: "" };
       document.getElementById("rdTitle").textContent = r.properties.label;
-      const picker = document.getElementById("rdGroups");
-      picker.innerHTML = "";
-      const chosen = recGroups(rec);
-      groupsOf().forEach(g => {
-        const b = groupButton(g);
-        b.classList.toggle("on", chosen.includes(g.id));
-        b.onclick = () => b.classList.toggle("on");
-        picker.appendChild(b);
-      });
-      const f = regionDlg.querySelector("form");
-      f.date.value = rec.date || "";
-      f.memo.value = rec.memo || "";
-      regionDlg.returnValue = "";
-      regionDlg.showModal();
+      const visit = visitId && visitsOf(state.regions[r.id]).find(v => v.id === visitId);
+      if (visit) showVisitEdit(visit, false);
+      else showVisitList();
+      if (!regionDlg.open) regionDlg.showModal();
     }
 
-    regionDlg.addEventListener("close", () => {
+    function showVisitList() {
       const r = editingRegion;
-      const f = regionDlg.querySelector("form");
-      if (!r) return;
-      if (regionDlg.returnValue === "save") {
-        const groups = [...document.querySelectorAll("#rdGroups .group-btn.on")].map(b => b.dataset.value);
-        if (groups.length) {
-          setRegion(r.id, { groups, date: f.date.value, memo: f.memo.value.trim() });
-        } else {
-          setRegion(r.id, null);
-          toast(`동행을 고르지 않아 ${r.properties.label} 색을 지웠어요`);
-        }
-      } else if (regionDlg.returnValue === "delete") {
-        setRegion(r.id, null);
-        toast(`${r.properties.label} 색을 지웠어요`);
+      const visits = state.regions[r.id] ? visitsOf(state.regions[r.id]) : [];
+      if (!visits.length) {
+        regionDlg.close();
+        return;
       }
+      rdList.hidden = false;
+      rdEdit.hidden = true;
+      document.getElementById("rdCount").textContent = `${visits.length}번 다녀왔어요 · 기록을 누르면 고칠 수 있어요`;
+      const ul = document.getElementById("rdVisits");
+      ul.innerHTML = "";
+      visits.forEach(v => {
+        const li = recordItem({ kind: "visit", r, v });
+        li.querySelector(".rec-title").textContent = v.date || "날짜 없음";
+        li.querySelector(".rec-sub").textContent = groupOfVisit(v) ? groupOfVisit(v).label : "";
+        li.onclick = () => showVisitEdit(v, false);
+        ul.appendChild(li);
+      });
+    }
+
+    function showVisitEdit(v, isNew) {
+      editingVisit = { v, isNew };
+      rdList.hidden = true;
+      rdEdit.hidden = false;
+      document.getElementById("rdEditSub").textContent = isNew ? "또 다녀왔군요! 누구와 다녀왔나요?" : "누구와 다녀왔나요?";
+      const picker = document.getElementById("rdGroups");
+      picker.innerHTML = "";
+      const current = groupById(v.group) ? v.group : groupsOf()[0].id;
+      groupsOf().forEach(g => {
+        const b = groupButton(g);
+        b.classList.toggle("on", g.id === current);
+        b.onclick = () => picker.querySelectorAll(".group-btn").forEach(x => x.classList.toggle("on", x === b));
+        picker.appendChild(b);
+      });
+      rdForm.date.value = v.date || "";
+      rdForm.memo.value = v.memo || "";
+      document.getElementById("rdDelete").style.display = isNew ? "none" : "";
+    }
+
+    document.getElementById("rdAdd").onclick = () => {
+      showVisitEdit({ id: uid(), group: brush === "eraser" ? groupsOf()[0].id : brush, date: today(), memo: "" }, true);
+    };
+
+    document.getElementById("rdBack").onclick = () => showVisitList();
+
+    document.getElementById("rdSave").onclick = () => {
+      const r = editingRegion;
+      const { v, isNew } = editingVisit;
+      const group = document.querySelector("#rdGroups .group-btn.on").dataset.value;
+      const next = { ...v, group, date: rdForm.date.value, memo: rdForm.memo.value.trim() };
+      delete next.color;
+      putVisit(r.id, next);
+      toast(isNew ? `${r.properties.label}에 다녀온 기록을 더했어요` : "기록을 저장했어요");
+      showVisitList();
+    };
+
+    document.getElementById("rdDelete").onclick = () => {
+      if (!confirm("이 기록을 지울까요?")) return;
+      removeVisit(editingRegion.id, editingVisit.v.id);
+      showVisitList();
+    };
+
+    document.getElementById("rdClear").onclick = () => {
+      const r = editingRegion;
+      const n = visitsOf(state.regions[r.id]).length;
+      if (!confirm(`${r.properties.label}의 다녀온 기록 ${n}개를 모두 지울까요?`)) return;
+      setRegion(r.id, null);
+      toast(`${r.properties.label} 색을 지웠어요`);
+      regionDlg.close();
+    };
+
+    regionDlg.addEventListener("close", () => {
       editingRegion = null;
+      editingVisit = null;
     });
 
     function openStickerDialog(s, isNew) {
@@ -1010,7 +1078,7 @@
         if (isNew) {
           // 스티커를 붙인 지역이 비어 있으면 같이 색칠
           if (s.regionId && !state.regions[s.regionId]) {
-            setRegion(s.regionId, { groups: [brush === "eraser" ? groupsOf()[0].id : brush], date: s.date, memo: "" });
+            putVisit(s.regionId, { id: uid(), group: brush === "eraser" ? groupsOf()[0].id : brush, date: s.date, memo: "" });
           }
           toast("스티커를 붙였어요! 끌어서 위치를 옮길 수 있어요");
         }
@@ -1089,7 +1157,7 @@
       paintTray.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.value === brush));
       stickerTray.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.value === selectedEmoji));
       document.getElementById("hint").textContent = mode === "paint"
-        ? (brush === "eraser" ? "지울 지역을 눌러 주세요" : `‘${groupById(brush).label}’ 다녀온 지역을 눌러 색칠해요 · 한 번 더 누르면 날짜·메모`)
+        ? (brush === "eraser" ? "지울 지역을 눌러 주세요" : `‘${groupById(brush).label}’ 다녀온 지역을 눌러 색칠해요 · 칠한 곳을 누르면 기록 보기·또 다녀온 기록 더하기`)
         : `${selectedEmoji} 다녀온 장소를 눌러 스티커를 붙여요 · 붙인 스티커는 끌어서 옮길 수 있어요`;
     }
 
@@ -1102,12 +1170,31 @@
       return groupsOf().find(g => g.id === id);
     }
 
-    // 예전 기록(색만 저장)은 처음 기본 동행 중 같은 색으로 읽습니다
-    // (나중에 동행 색을 바꾸거나 추가해도 예전 기록이 엉뚱한 동행으로 바뀌지 않게)
+    /* 지역 기록 = { visits: { 방문id: { id, group, date, memo } } }
+       예전 기록({ groups, date, memo } 또는 색만 저장한 { color, date, memo })은 방문 목록으로 읽고,
+       고칠 때 새 형식으로 바꿔 저장합니다. 색만 저장한 기록은 처음 기본 동행 중 같은 색으로 읽어서
+       나중에 동행 색을 바꾸거나 추가해도 엉뚱한 동행으로 바뀌지 않게 합니다. */
+    function visitsOf(rec) {
+      let list;
+      if (rec.visits) {
+        list = Object.values(rec.visits);
+      } else {
+        const legacy = DEFAULT_GROUPS.find(g => g.color === rec.color);
+        const groups = Array.isArray(rec.groups) ? rec.groups : legacy ? [legacy.id] : [];
+        list = groups.length
+          ? groups.map((group, i) => ({ id: `old${i}`, group, date: rec.date || "", memo: i === 0 ? rec.memo || "" : "" }))
+          : [{ id: "old0", group: null, color: rec.color || LAND, date: rec.date || "", memo: rec.memo || "" }];
+      }
+      return list.sort((a, b) => (b.date || "").localeCompare(a.date || "") || b.id.localeCompare(a.id));
+    }
+
+    function groupOfVisit(v) {
+      return groupById(v.group);
+    }
+
     function recGroups(rec) {
-      if (Array.isArray(rec.groups)) return rec.groups.filter(id => groupById(id));
-      const g = DEFAULT_GROUPS.find(g => g.color === rec.color);
-      return g && groupById(g.id) ? [g.id] : [];
+      const used = new Set(visitsOf(rec).map(v => v.group));
+      return groupsOf().filter(g => used.has(g.id)).map(g => g.id);
     }
 
     function groupNames(rec) {
@@ -1116,7 +1203,9 @@
 
     function recColors(rec) {
       const colors = recGroups(rec).map(id => groupById(id).color);
-      return colors.length ? colors : [rec.color || LAND];
+      if (colors.length) return colors;
+      const legacy = visitsOf(rec).map(v => v.color).filter(Boolean);
+      return legacy.length ? [...new Set(legacy)] : [LAND];
     }
 
     function fillFor(rec) {
@@ -1225,7 +1314,7 @@
         `${visited.length}<small> / ${regions.length} 시·군·구 (${pct}%)</small>`;
       document.getElementById("statBar").style.width = `${pct}%`;
       document.getElementById("summary").innerHTML =
-        `시·도 <b>${visitedProv.size}</b>/17 · 시·군·구 <b>${visited.length}</b> · 스티커 <b>${state.stickers.length}</b>개`;
+        `시·도 <b>${visitedProv.size}</b>/17 · 시·군·구 <b>${visited.length}</b> · 방문 <b>${d3.sum(visited, r => visitsOf(state.regions[r.id]).length)}</b>번 · 스티커 <b>${state.stickers.length}</b>개`;
 
       const groupStats = document.getElementById("groupStats");
       groupStats.innerHTML = "";
@@ -1257,7 +1346,7 @@
 
       const items = [
         ...state.stickers.map(s => ({ kind: "sticker", date: s.date || "", s })),
-        ...visited.map(r => ({ kind: "region", date: state.regions[r.id].date || "", r }))
+        ...visited.flatMap(r => visitsOf(state.regions[r.id]).map(v => ({ kind: "visit", date: v.date || "", r, v })))
       ].sort((a, b) => b.date.localeCompare(a.date)); // 최신순 (날짜 없는 기록은 맨 뒤)
 
       const box = document.getElementById("records");
@@ -1284,7 +1373,7 @@
       if (!recordsExpanded || items.length <= RECENT_RECORDS) {
         box.appendChild(listOf(items.slice(0, RECENT_RECORDS)));
         if (items.length > RECENT_RECORDS) {
-          box.appendChild(moreBtn(`더보기 · 연도별로 전체 ${items.length}개`, () => {
+          box.appendChild(moreBtn(`더보기 · 연도별/지역별로 전체 ${items.length}개`, () => {
             recordsExpanded = true;
             renderPanel();
           }));
@@ -1292,16 +1381,36 @@
         return;
       }
 
-      // 연도별로 묶어서 보여 주고, 가장 최근 해만 펼쳐 둡니다
-      const years = d3.groups(items, it => (it.date ? it.date.slice(0, 4) : ""));
-      years.forEach(([year, its], i) => {
+      // 연도별 또는 17개 시·도별로 묶어 보여 주고, 첫 묶음만 펼쳐 둡니다
+      const tabs = document.createElement("div");
+      tabs.className = "view-tabs";
+      [["year", "연도별"], ["prov", "지역별"]].forEach(([view, text]) => {
+        const b = document.createElement("button");
+        b.textContent = text;
+        b.classList.toggle("on", recordsView === view);
+        b.onclick = () => {
+          recordsView = view;
+          renderPanel();
+        };
+        tabs.appendChild(b);
+      });
+      box.appendChild(tabs);
+
+      const provOrder = Object.keys(PROVINCES);
+      const groupsByView = recordsView === "year"
+        ? d3.groups(items, it => (it.date ? it.date.slice(0, 4) : ""))
+        : d3.groups(items, recordProv).sort((a, b) => (provOrder.indexOf(a[0]) + 1 || 99) - (provOrder.indexOf(b[0]) + 1 || 99));
+      groupsByView.forEach(([key, its], i) => {
+        const openKey = `${recordsView}:${key}`;
         const details = document.createElement("details");
         details.className = "year-group";
-        details.open = i === 0 || openYears.has(year);
-        details.ontoggle = () => (details.open ? openYears.add(year) : openYears.delete(year));
+        details.open = i === 0 || openYears.has(openKey);
+        details.ontoggle = () => (details.open ? openYears.add(openKey) : openYears.delete(openKey));
         const summary = document.createElement("summary");
         const name = document.createElement("span");
-        name.textContent = year ? `${year}년` : "날짜 없음";
+        name.textContent = recordsView === "year"
+          ? (key ? `${key}년` : "날짜 없음")
+          : (PROVINCES[key] ? PROVINCE_NAMES[key] : "지역 없음");
         const count = document.createElement("small");
         count.textContent = `${its.length}개`;
         name.appendChild(count);
@@ -1317,6 +1426,19 @@
 
     const RECENT_RECORDS = 3;
     let recordsExpanded = false;
+    let recordsView = "year";
+
+    const PROVINCE_NAMES = {
+      "11": "서울특별시", "21": "부산광역시", "22": "대구광역시", "23": "인천광역시", "24": "광주광역시",
+      "25": "대전광역시", "26": "울산광역시", "29": "세종특별자치시", "31": "경기도", "32": "강원특별자치도",
+      "33": "충청북도", "34": "충청남도", "35": "전북특별자치도", "36": "전라남도", "37": "경상북도",
+      "38": "경상남도", "39": "제주특별자치도"
+    };
+
+    function recordProv(it) {
+      const region = it.kind === "sticker" ? (it.s.regionId && regionById.get(it.s.regionId)) : it.r;
+      return region ? region.properties.prov : "";
+    }
     const openYears = new Set();
 
     function recordItem(it) {
@@ -1345,14 +1467,14 @@
           openStickerDialog(s, false);
         };
       } else {
-        const rec = state.regions[it.r.id];
-        icon.style.background = cssFill(rec);
+        const g = groupOfVisit(it.v);
+        icon.style.background = g ? g.color : it.v.color || LAND;
         title.textContent = it.r.properties.label;
-        sub.textContent = [groupNames(rec), rec.date || "날짜 없음"].filter(Boolean).join(" · ");
-        memo.textContent = rec.memo || "";
+        sub.textContent = [g && g.label, it.v.date || "날짜 없음"].filter(Boolean).join(" · ");
+        memo.textContent = it.v.memo || "";
         li.onclick = () => {
           zoomToRegion(it.r);
-          openRegionDialog(it.r);
+          openRegionDialog(it.r, it.v.id);
         };
       }
 
@@ -1387,6 +1509,33 @@
       else delete state.regions[id];
       commit();
       remote.update(fs => ({ [`regions.${id}`]: rec || fs.deleteField() }));
+    }
+
+    function putVisit(id, v) {
+      const cur = state.regions[id];
+      if (cur && cur.visits) {
+        cur.visits[v.id] = v;
+        commit();
+        remote.update(() => ({ [`regions.${id}.visits.${v.id}`]: v }));
+        return;
+      }
+      // 처음 칠하거나 예전 형식이면 지역 기록 전체를 새 형식으로 저장
+      const visits = Object.fromEntries((cur ? visitsOf(cur) : []).map(x => [x.id, x]));
+      visits[v.id] = v;
+      setRegion(id, { visits });
+    }
+
+    function removeVisit(id, visitId) {
+      const cur = state.regions[id];
+      const left = visitsOf(cur).filter(x => x.id !== visitId);
+      if (!left.length) return setRegion(id, null);
+      if (cur.visits) {
+        delete cur.visits[visitId];
+        commit();
+        remote.update(fs => ({ [`regions.${id}.visits.${visitId}`]: fs.deleteField() }));
+      } else {
+        setRegion(id, { visits: Object.fromEntries(left.map(x => [x.id, x])) });
+      }
     }
 
     function plainSticker(s) {
@@ -1774,7 +1923,8 @@
     function regionTip(r) {
       const rec = state.regions[r.id];
       if (!rec) return r.properties.label;
-      return [r.properties.label, groupNames(rec), rec.date].filter(Boolean).join(" · ");
+      const visits = visitsOf(rec);
+      return [r.properties.label, groupNames(rec), visits.length > 1 ? `${visits.length}번 다녀옴` : visits[0].date].filter(Boolean).join(" · ");
     }
 
     function showTip(e, text) {
