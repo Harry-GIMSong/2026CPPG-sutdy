@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#e8578a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="여성 홈트">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest-women.webmanifest">
+<link rel="icon" href="apple-touch-icon-women.png">
+<link rel="apple-touch-icon" href="apple-touch-icon-women.png">
 <title>여성 초급 홈트 4주</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -61,6 +68,7 @@
   --shadow:0 6px 24px rgba(0,0,0,.35);
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{margin:0}
 body{
   background:var(--bg);
@@ -177,6 +185,7 @@ textarea{width:100%;min-height:64px;border:1px solid var(--line);border-radius:1
 .player{position:fixed;inset:0;background:var(--bg);z-index:30;display:none;flex-direction:column}
 .player.show{display:flex}
 .p-top{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;gap:10px}
+.icon-btn.off{opacity:.4;text-decoration:line-through}
 .p-progress{height:6px;background:var(--surface-2);margin:0 16px;border-radius:99px;overflow:hidden}
 .p-progress i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s linear}
 .p-main{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;gap:6px}
@@ -251,7 +260,8 @@ textarea{width:100%;min-height:64px;border:1px solid var(--line);border-radius:1
     </div>
     <div class="top-actions">
       <a class="switch" href="index.html">💪 기본 버전</a>
-    <button class="icon-btn" id="themeBtn" title="테마 전환" aria-label="테마 전환">🌓</button>
+      <button class="icon-btn" id="installBtn" title="앱 설치" aria-label="앱 설치" hidden>📲</button>
+      <button class="icon-btn" id="themeBtn" title="테마 전환" aria-label="테마 전환">🌓</button>
     </div>
   </header>
 
@@ -279,6 +289,8 @@ textarea{width:100%;min-height:64px;border:1px solid var(--line);border-radius:1
   <div class="settings">
     <span class="pill">🌱 초급 전용 · 점프 없음</span>
     <label class="field"><input type="checkbox" id="voiceToggle"> 음성 안내</label>
+    <label class="field"><input type="checkbox" id="musicToggle"> 🎵 배경 음악</label>
+    <input type="range" id="musicVol" min="0" max="100" step="5" aria-label="음악 볼륨" style="width:90px;accent-color:var(--accent)">
     <span class="field" id="voiceBox" hidden><select id="voiceSel" aria-label="목소리 선택"></select><button class="btn ghost" id="voiceTest" style="padding:6px 10px">🔊 들어보기</button></span>
   </div>
 
@@ -333,7 +345,7 @@ textarea{width:100%;min-height:64px;border:1px solid var(--line);border-radius:1
   <div class="p-top">
     <button class="icon-btn" id="quitPlayer" aria-label="종료">✕</button>
     <div class="today-text" id="pTitle"></div>
-    <div class="today-text" id="pRemain" style="min-width:40px;text-align:right"></div>
+    <div style="display:flex;align-items:center;gap:8px"><span class="today-text" id="pRemain" style="min-width:40px;text-align:right"></span><button class="icon-btn" id="pMusic" aria-label="배경 음악 켜기/끄기" title="배경 음악">🎵</button></div>
   </div>
   <div class="p-progress"><i id="pBar"></i></div>
   <div class="p-main" id="pMain">
@@ -611,7 +623,7 @@ const KEY = 'women-beginner-4week-v1';
 function todayISO(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function load(){
   try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.days){s.level='beginner';return s;}}catch(e){}
-  return {level:'beginner',voice:false,days:{},tests:{},theme:null};
+  return {level:'beginner',voice:false,music:true,musicVol:50,days:{},tests:{},theme:null};
 }
 let state = load();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
@@ -648,6 +660,8 @@ const $ = id=>document.getElementById(id);
 
 function render(){
   $('voiceToggle').checked = !!state.voice;
+  $('musicToggle').checked = musicOn();
+  $('musicVol').value = state.musicVol??50;
   applyTheme();
 
   const ti = nextIncomplete(); // 다음에 할 DAY
@@ -791,6 +805,96 @@ function beep(freq=880,dur=.12,vol=.15){
     o.start();g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+dur);o.stop(audioCtx.currentTime+dur);
   }catch(e){}
 }
+/* ---------- 배경 음악: Web Audio로 실시간 합성하는 자체 제작 비트 (저작권 걱정 없음, 오프라인 동작) ----------
+   구간에 따라 강도가 바뀐다: 운동=풀 비트, 워밍업=가볍게, 휴식=필터로 잔잔하게, 스트레칭=칠아웃 */
+const MUSIC=(function(){
+  const mtof=m=>440*Math.pow(2,(m-69)/12);
+  const PROG={
+    minor:[{r:45,c:[57,60,64]},{r:41,c:[57,60,65]},{r:48,c:[55,60,64]},{r:43,c:[55,59,62]}],
+    lift: [{r:38,c:[57,62,65]},{r:46,c:[58,62,65]},{r:41,c:[57,60,65]},{r:48,c:[55,60,64]}],
+    soft: [{r:41,c:[57,60,64,65]},{r:45,c:[57,60,64,67]},{r:38,c:[57,62,65,69]},{r:43,c:[55,59,62,67]}]
+  };
+  const STYLES={
+    house:  {bpm:124, prog:'minor', kick:'x...x...x...x...', clap:'....x.......x...', hat:'..x...x...x...x.', tick:'x.x.x.x.x.x.x.x.', bass:'..x...x...x...x.', stab:'...x..x....x..x.'},
+    electro:{bpm:128, prog:'lift',  kick:'x...x...x...x...', clap:'....x.......x...', hat:'..x...x...x...x.', tick:'xxxxxxxxxxxxxxxx', bass:'x.xxx.xxx.xxx.xx', arp:'xxxxxxxxxxxxxxxx'},
+    funk:   {bpm:108, prog:'minor', swing:.12, kick:'x.....x...x..x..', clap:'....x.......x...', hat:'x.x.x.x.x.x.x.x.', tick:'', bass:'x..x..x...x.x..x', stab:'..x.....x.x.....'},
+    chill:  {bpm:84,  prog:'soft',  kick:'x.........x.....', clap:'....x.......x...', hat:'.......x.......x', tick:'', bass:'x...............', pad:true}
+  };
+  // 구간별 악기 세기 (0=끔)
+  const MIX={
+    ready:{kick:.6,clap:0,hat:.6,tick:0,bass:.6,stab:0,arp:0,pad:.6,cut:5000},
+    warm: {kick:.8,clap:.4,hat:.8,tick:.3,bass:.8,stab:.4,arp:0,pad:.6,cut:7000},
+    work: {kick:1,clap:1,hat:1,tick:.7,bass:1,stab:1,arp:.8,pad:.7,cut:16000},
+    rest: {kick:0,clap:0,hat:.4,tick:0,bass:.6,stab:.5,arp:.3,pad:1,cut:900},
+    cool: {kick:.5,clap:.4,hat:.6,tick:0,bass:.7,stab:0,arp:0,pad:1,cut:3000}
+  };
+  let ctx,bus,filt,noise,timer=null,step=0,nextT=0,style=STYLES.house,mix=MIX.ready,vol=.5,duckLv=1,playing=false;
+  function init(){
+    audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+    ctx=audioCtx;
+    if(!bus){
+      bus=ctx.createGain(); bus.gain.value=0;
+      filt=ctx.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=16000; filt.Q.value=.7;
+      const comp=ctx.createDynamicsCompressor(); comp.threshold.value=-14; comp.ratio.value=4;
+      filt.connect(bus); bus.connect(comp); comp.connect(ctx.destination);
+      noise=ctx.createBuffer(1,ctx.sampleRate,ctx.sampleRate);
+      const d=noise.getChannelData(0); for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    }
+  }
+  const level=()=>vol*duckLv*.55;
+  function env(g,t,v,a,len){g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(v,0.0002),t+a);g.gain.exponentialRampToValueAtTime(0.0001,t+len);}
+  function out(node){const g=ctx.createGain();node.connect(g);g.connect(filt);return g;}
+  function kick(t,v){const o=ctx.createOscillator(),g=out(o);o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(45,t+.12);env(g,t,v,.002,.32);o.start(t);o.stop(t+.35);}
+  function noiseHit(t,v,type,freq,len){const s=ctx.createBufferSource();s.buffer=noise;const f=ctx.createBiquadFilter();f.type=type;f.frequency.value=freq;s.connect(f);const g=out(f);env(g,t,v,.002,len);s.start(t,Math.random()*.5);s.stop(t+len+.02);}
+  function tone(t,m,v,type,len,cut,a){const o=ctx.createOscillator();o.type=type;o.frequency.value=mtof(m);let n=o;if(cut){const f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=cut;f.Q.value=4;o.connect(f);n=f;}const g=out(n);env(g,t,v,a||.005,len);o.start(t);o.stop(t+len+.05);}
+  const hit=(pat,s)=>pat&&pat[s]==='x';
+  function play(st,t){
+    const s=st%16, bar=Math.floor(st/16)%4, ch=PROG[style.prog][bar], spb=60/style.bpm/4;
+    if(hit(style.kick,s)&&mix.kick)kick(t,.9*mix.kick);
+    if(hit(style.clap,s)&&mix.clap)noiseHit(t,.35*mix.clap,'bandpass',1600,.16);
+    if(hit(style.hat,s)&&mix.hat)noiseHit(t,.16*mix.hat,'highpass',7000,.09);
+    if(hit(style.tick,s)&&mix.tick)noiseHit(t,.05*mix.tick,'highpass',9000,.03);
+    if(hit(style.bass,s)&&mix.bass){const oct=style===STYLES.funk&&s%8===6?12:0;tone(t,ch.r+oct,.32*mix.bass,'sawtooth',spb*1.6,420);}
+    if(hit(style.stab,s)&&mix.stab)ch.c.forEach(m=>tone(t,m,.07*mix.stab,'square',.18,1800));
+    if(hit(style.arp,s)&&mix.arp){const notes=ch.c.concat(ch.c[0]+12);tone(t,notes[s%notes.length]+12,.05*mix.arp,'square',spb*.9,2600);}
+    if(mix.pad&&s===0&&(style.pad||mix===MIX.rest||mix===MIX.cool))
+      ch.c.forEach(m=>{tone(t,m,.035*mix.pad,'sawtooth',spb*16,900,.5);tone(t,m+.08,.03*mix.pad,'triangle',spb*16,1200,.5);});
+  }
+  function sched(){
+    while(nextT<ctx.currentTime+.12){
+      play(step,nextT);
+      const spb=60/style.bpm/4, sw=style.swing||0;
+      nextT+=spb*(sw?(step%2===0?1+sw:1-sw):1);
+      step=(step+1)%64;
+    }
+  }
+  function ramp(p,v,sec){const t=ctx.currentTime;p.cancelScheduledValues(t);p.setValueAtTime(p.value,t);p.linearRampToValueAtTime(v,t+sec);}
+  return {
+    start(name){
+      try{
+        init(); ctx.resume&&ctx.resume();
+        style=STYLES[name]||STYLES.house; step=0; nextT=ctx.currentTime+.08; playing=true;
+        clearInterval(timer); timer=setInterval(sched,25);
+        ramp(bus.gain,level(),1.2);
+      }catch(e){}
+    },
+    stop(fade){
+      if(!bus)return; playing=false; clearInterval(timer); timer=null;
+      try{ramp(bus.gain,0,fade||.4);}catch(e){}
+    },
+    pause(){if(!bus||!playing)return;clearInterval(timer);timer=null;try{ramp(bus.gain,0,.25);}catch(e){}},
+    resume(){if(!bus||!playing||timer)return;nextT=ctx.currentTime+.08;timer=setInterval(sched,25);try{ramp(bus.gain,level(),.4);}catch(e){}},
+    mode(kind,chill){
+      mix=MIX[kind]||MIX.work;
+      if(chill&&kind!=='rest')mix=MIX.cool;
+      if(bus)try{ramp(filt.frequency,mix.cut,kind==='rest'?.6:.3);}catch(e){}
+    },
+    volume(v){vol=v;if(bus&&playing&&timer)try{ramp(bus.gain,level(),.2);}catch(e){}},
+    duck(on){duckLv=on?.35:1;if(bus&&playing&&timer)try{ramp(bus.gain,level(),on?.15:.6);}catch(e){}},
+    get playing(){return playing;}
+  };
+})();
+
 /* 음성 안내: 기기에서 가장 자연스러운 한국어 목소리를 고르고, 코치처럼 매번 다른 말로 안내 */
 let voices=[];
 function voiceScore(v){
@@ -816,6 +920,7 @@ function speak(text){
     speechSynthesis.cancel();
     const u=new SpeechSynthesisUtterance(text),v=pickVoice();
     if(v)u.voice=v;
+    u.onstart=()=>MUSIC.duck(true); u.onend=u.onerror=()=>MUSIC.duck(false);
     u.lang=v?v.lang:'ko-KR'; u.rate=0.95; u.pitch=1.08;
     speechSynthesis.speak(u);
   }catch(e){}
@@ -861,6 +966,9 @@ async function keepAwake(on){
   }catch(e){}
 }
 
+const DAY_MUSIC=['house','house','electro','funk','funk','electro','chill'];
+const musicOn=()=>state.music!==false;
+function startMusic(){if(!P||!musicOn())return;MUSIC.volume((state.musicVol??50)/100);MUSIC.start(DAY_MUSIC[P.plan.d]);MUSIC.mode(P.phases[P.i].kind,P.plan.type.recovery);if(!P.running)MUSIC.pause();}
 function startWorkout(idx){
   closeSheet();
   const plan=planFor(idx);
@@ -872,6 +980,8 @@ function startWorkout(idx){
   $('player').classList.add('show');
   document.body.style.overflow='hidden';
   showPhase(true);
+  startMusic();
+  syncMusicBtn();
   P.timer=setInterval(tick,1000);
   keepAwake(true);
 }
@@ -889,6 +999,7 @@ function showPhase(announce){
   $('pNext').textContent=nx?`다음 → ${EX[nx.id].e} ${EX[nx.id].n}`:'마지막 동작이에요!';
   $('pNext').style.visibility=ph.kind==='ready'?'hidden':'visible';
   $('pRing').style.stroke = ph.kind==='rest'?'var(--rest)':(ph.kind==='work'||ph.kind==='ready')?'var(--accent)':'var(--good)';
+  MUSIC.mode(ph.kind,P.plan.type.recovery);
   updateTime();
   if(announce){
     speakPhase(ph);
@@ -909,6 +1020,10 @@ function tick(){
   P.left--;
   if(P.phases[P.i].kind!=='ready')P.elapsed++;
   if(P.left>0&&P.left<=3)beep(660,.1);
+  if(P.phases[P.i].kind==='work'){ // 운동 끝나기 직전 카운트다운
+    if(P.left===5)say('이제 3초 남았어요.');
+    else if(P.left>=1&&P.left<=3)say(['하나','둘','셋'][P.left-1]);
+  }
   if(P.left<=0){next(true);return;}
   const cur=P.phases[P.i];
   if(cur.kind==='work'&&cur.sec>=30&&P.left===Math.floor(cur.sec/2))say(pick(LINES.half));
@@ -927,11 +1042,13 @@ function prev(){
 }
 function togglePlay(){
   P.running=!P.running;
+  if(P.running)MUSIC.resume();else MUSIC.pause();
   $('pPlay').textContent=P.running?'⏸':'▶';
   $('pPlay').setAttribute('aria-label',P.running?'일시정지':'재개');
 }
 function finishWorkout(){
   clearInterval(P.timer);P.running=false;
+  MUSIC.stop(2.5);
   beep(784,.15);setTimeout(()=>beep(1046,.3),160);
   say(pick(LINES.done));
   $('pMain').style.display='none';$('pControls').style.display='none';
@@ -944,6 +1061,7 @@ function finishWorkout(){
 }
 function closePlayer(){
   if(P){clearInterval(P.timer);}
+  MUSIC.stop();
   P=null;
   try{speechSynthesis.cancel();}catch(e){}
   $('player').classList.remove('show');
@@ -965,6 +1083,10 @@ $('toggleDone').onclick=()=>{
   save();render();openSheet(i);
 };
 $('voiceToggle').addEventListener('change',e=>{state.voice=e.target.checked;save();loadVoices();if(state.voice)say('음성 안내를 켰어요. 운동하는 동안 옆에서 함께할게요.');});
+function syncMusicBtn(){$('pMusic').classList.toggle('off',!musicOn());$('musicToggle').checked=musicOn();}
+$('musicToggle').addEventListener('change',e=>{state.music=e.target.checked;save();syncMusicBtn();if(P){if(state.music)startMusic();else MUSIC.stop();}});
+$('musicVol').addEventListener('input',e=>{state.musicVol=+e.target.value;save();MUSIC.volume(state.musicVol/100);});
+$('pMusic').onclick=()=>{state.music=!musicOn();save();syncMusicBtn();if(state.music)startMusic();else MUSIC.stop();toast(state.music?'배경 음악 켬 🎵':'배경 음악 끔');};
 $('voiceSel').addEventListener('change',e=>{state.voiceName=e.target.value;save();speak('안녕하세요. 오늘도 함께 즐겁게 운동해요.');});
 $('voiceTest').onclick=()=>speak(pick(LINES.rest)('스쿼트'));
 if('speechSynthesis' in window){loadVoices();speechSynthesis.addEventListener('voiceschanged',loadVoices);}
@@ -1014,6 +1136,21 @@ $('resetBtn').onclick=()=>{
 
 let toastT;
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2200);}
+
+/* 앱 설치 (PWA) */
+let installEvt=null;
+const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;$('installBtn').hidden=false;});
+window.addEventListener('appinstalled',()=>{$('installBtn').hidden=true;toast('앱이 설치됐어요! 홈 화면에서 열어 보세요');});
+if(isIOS&&!standalone)$('installBtn').hidden=false;
+$('installBtn').onclick=async()=>{
+  if(installEvt){installEvt.prompt();await installEvt.userChoice;installEvt=null;$('installBtn').hidden=true;}
+  else toast('Safari 아래쪽 공유 버튼 → "홈 화면에 추가"를 누르세요');
+};
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+window.__app={MUSIC,get P(){return P;},get audio(){return audioCtx;}}; // 디버그용
 
 render();
 })();
