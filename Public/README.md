@@ -7,7 +7,7 @@
 - `index.html` — 폴더 주소로 들어오면 `basic.html`로 넘겨 주는 안내 페이지
 
 ## 휴대폰에 앱으로 설치
-1. 휴대폰 브라우저로 `https://harry-gimsong.github.io/PR/fitness-planner/` (쉬운 버전은 `…/fitness-planner/easy.html`)을 엽니다.
+1. 휴대폰 브라우저로 `https://harry-gimsong.github.io/PR/Public/` (쉬운 버전은 `…/Public/easy.html`)을 엽니다.
 2. **아이폰(Safari)**: 공유 버튼 → "홈 화면에 추가" / **안드로이드(Chrome)**: 상단의 📲 버튼 또는 ⋮ 메뉴 → "앱 설치"
 3. 홈 화면 아이콘으로 열면 주소창 없이 앱처럼 실행되고, 한 번 열어 두면 **인터넷 없이도** 동작합니다.
 
