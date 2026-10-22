@@ -925,8 +925,9 @@
         return;
       }
 
-      putVisit(r.id, { id: uid(), group: brush, date: today(), memo: "" });
-      toast(`${label} 색칠 완료! 한 번 더 누르면 메모를 남기거나 또 다녀온 기록을 더해요`);
+      // 색칠만 할 때는 날짜를 비워 두고, 날짜·메모를 남겨야 여행 기록에 올라갑니다
+      putVisit(r.id, { id: uid(), group: brush, date: "", memo: "" });
+      toast(`${label} 색칠 완료! 다시 누르면 날짜·메모를 남겨 여행 기록에 올릴 수 있어요`);
     }
 
     /* ===== 대화상자 ===== */
@@ -963,7 +964,10 @@
       editingRegion = r;
       document.getElementById("rdTitle").textContent = r.properties.label;
       const visit = visitId && visitsOf(state.regions[r.id]).find(v => v.id === visitId);
+      const visits = state.regions[r.id] ? visitsOf(state.regions[r.id]) : [];
+      // 아직 아무것도 적지 않은 방문 하나뿐이면 목록 대신 바로 적는 화면으로
       if (visit) showVisitEdit(visit, false);
+      else if (visits.length === 1 && !hasNote(visits[0])) showVisitEdit(visits[0], false);
       else showVisitList();
       if (!regionDlg.open) regionDlg.showModal();
     }
@@ -982,7 +986,7 @@
       ul.innerHTML = "";
       visits.forEach(v => {
         const li = recordItem({ kind: "visit", r, v });
-        li.querySelector(".rec-title").textContent = v.date || "날짜 없음";
+        li.querySelector(".rec-title").textContent = v.date || (v.memo ? "날짜 없음" : "아직 기록 없음 · 눌러서 남기기");
         li.querySelector(".rec-sub").textContent = groupOfVisit(v) ? groupOfVisit(v).label : "";
         li.onclick = () => showVisitEdit(v, false);
         ul.appendChild(li);
@@ -1009,7 +1013,7 @@
     }
 
     document.getElementById("rdAdd").onclick = () => {
-      showVisitEdit({ id: uid(), group: brush === "eraser" ? groupsOf()[0].id : brush, date: today(), memo: "" }, true);
+      showVisitEdit({ id: uid(), group: brush === "eraser" ? groupsOf()[0].id : brush, date: "", memo: "" }, true);
     };
 
     document.getElementById("rdBack").onclick = () => showVisitList();
@@ -1078,7 +1082,7 @@
         if (isNew) {
           // 스티커를 붙인 지역이 비어 있으면 같이 색칠
           if (s.regionId && !state.regions[s.regionId]) {
-            putVisit(s.regionId, { id: uid(), group: brush === "eraser" ? groupsOf()[0].id : brush, date: s.date, memo: "" });
+            putVisit(s.regionId, { id: uid(), group: brush === "eraser" ? groupsOf()[0].id : brush, date: "", memo: "" });
           }
           toast("스티커를 붙였어요! 끌어서 위치를 옮길 수 있어요");
         }
@@ -1186,6 +1190,11 @@
           : [{ id: "old0", group: null, color: rec.color || LAND, date: rec.date || "", memo: rec.memo || "" }];
       }
       return list.sort((a, b) => (b.date || "").localeCompare(a.date || "") || b.id.localeCompare(a.id));
+    }
+
+    // 날짜나 메모를 남긴 방문만 여행 기록 목록에 보입니다
+    function hasNote(v) {
+      return Boolean(v.date || v.memo);
     }
 
     function groupOfVisit(v) {
@@ -1346,13 +1355,13 @@
 
       const items = [
         ...state.stickers.map(s => ({ kind: "sticker", date: s.date || "", s })),
-        ...visited.flatMap(r => visitsOf(state.regions[r.id]).map(v => ({ kind: "visit", date: v.date || "", r, v })))
+        ...visited.flatMap(r => visitsOf(state.regions[r.id]).filter(hasNote).map(v => ({ kind: "visit", date: v.date || "", r, v })))
       ].sort((a, b) => b.date.localeCompare(a.date)); // 최신순 (날짜 없는 기록은 맨 뒤)
 
       const box = document.getElementById("records");
       box.innerHTML = "";
       if (!items.length) {
-        box.innerHTML = '<p class="empty">아직 기록이 없어요. 지도에서 다녀온 곳을 눌러 보세요!</p>';
+        box.innerHTML = '<p class="empty">아직 기록이 없어요. 색칠한 곳을 다시 눌러 날짜·메모를 남기면 여기에 쌓여요!</p>';
         return;
       }
 
