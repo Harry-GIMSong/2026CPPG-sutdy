@@ -76,6 +76,7 @@ body{
   font-family:"Noto Sans KR",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
   line-height:1.5;
   -webkit-font-smoothing:antialiased;
+  word-break:keep-all;overflow-wrap:break-word;
 }
 button{font:inherit;color:inherit;cursor:pointer}
 input,select,textarea{font:inherit;color:inherit}
@@ -202,7 +203,7 @@ textarea{width:100%;min-height:64px;border:1px solid var(--line);border-radius:1
 .fig-far polyline{stroke:var(--muted);opacity:.5}
 .fig-head{fill:var(--text)}
 .p-name{font-size:28px;font-weight:900;margin:0}
-.p-cue{color:var(--muted);max-width:420px;font-size:15px;margin:0}
+.p-cue{white-space:pre-line;text-wrap:balance;color:var(--muted);max-width:420px;font-size:15px;margin:0}
 .p-timer{position:relative;width:220px;height:220px;margin:10px 0}
 .p-timer svg{transform:rotate(-90deg)}
 .p-timer .t{position:absolute;inset:0;display:grid;place-items:center;font-size:64px;font-weight:900;font-variant-numeric:tabular-nums}
@@ -750,7 +751,7 @@ function openSheet(idx){
     ? `약 ${mins(p.total)}분 · 동작당 ${p.phases.find(x=>x.kind==='cool').sec}초 유지`
     : `약 ${mins(p.total)}분 · ${p.wk.rounds}라운드 · 운동 ${p.wk.work+lv.dw}초 / 휴식 ${p.wk.rest+lv.dr}초 (${lv.label})`;
 
-  const li=(id,s)=>{const x=EX[id];const tip=state.level==='beginner'&&x.easy?` 💡 ${x.easy}`:'';
+  const li=(id,s)=>{const x=EX[id];const tip=state.level==='beginner'&&x.easy?`<br>💡 ${x.easy}`:'';
     return `<li><span class="ee" data-fig="${id}">${x.e}</span><div><div class="en">${x.n}</div><div class="ed">${x.c}${tip}</div></div><span class="es">${s}</span></li>`;};
   let body=`<div class="block-title">워밍업 · ${WARMUP.length*WARM_SEC/60}분</div><ul class="ex-list">${WARMUP.map(id=>li(id,WARM_SEC+'초')).join('')}</ul>`;
   if(p.type.recovery){
@@ -901,28 +902,45 @@ function loadVoices(){
   $('voiceBox').hidden=!state.voice||voices.length<2;
 }
 function pickVoice(){return voices.find(v=>v.name===state.voiceName)||voices[0]||null;}
-let speakT=null;
-function speak(text,queue){
+let speakT=null, curKind='';
+const RATE=1.0;
+function speak(text,mode){
   if(!('speechSynthesis' in window))return;
   try{
-    const u=new SpeechSynthesisUtterance(text),v=pickVoice();
+    const u=new SpeechSynthesisUtterance(text),v=pickVoice(),kind=(mode==='cd'||mode==='queue')?'cd':'';
     if(v)u.voice=v;
-    u.onstart=()=>MUSIC.duck(true); u.onend=u.onerror=()=>{if(!speechSynthesis.pending)MUSIC.duck(false);};
-    u.lang=v?v.lang:'ko-KR'; u.rate=0.95; u.pitch=1.05;
-    if(queue){speechSynthesis.speak(u);return;} // 카운트다운처럼 앞 문장을 끊지 않고 이어서 말하기
+    u.onstart=()=>{curKind=kind;MUSIC.duck(true);};
+    u.onend=u.onerror=()=>{curKind='';if(!speechSynthesis.pending)MUSIC.duck(false);};
+    u.lang=v?v.lang:'ko-KR'; u.rate=RATE; u.pitch=1.05;
+    const busy=speechSynthesis.speaking||speechSynthesis.pending;
+    // 자동 전환 안내는 끝나기 전 예고 멘트를 끊지 않고 그 뒤에 이어서 말한다
+    if(mode==='queue'||(mode==='gentle'&&busy&&curKind==='cd')){speechSynthesis.speak(u);return;}
     clearTimeout(speakT);
-    if(speechSynthesis.speaking||speechSynthesis.pending){
+    if(busy){
       speechSynthesis.cancel();
       speakT=setTimeout(()=>speechSynthesis.speak(u),80); // 크롬: 취소 직후 바로 말하면 무음이 되는 문제 회피
     }else speechSynthesis.speak(u);
   }catch(e){}
 }
-function say(text,queue){if(state.voice)speak(text,queue);}
+// 말하는 데 걸리는 시간(초) 대략 추정: 한국어 TTS는 초당 6.5음절 안팎, 문장부호마다 쉼
+function estSec(t){
+  const syl=(t.match(/[가-힣]/g)||[]).length, oth=(t.match(/[A-Za-z0-9]/g)||[]).length, pause=(t.match(/[.,!?]/g)||[]).length;
+  return (syl+oth*.6)/(6.5*RATE)+pause*.25+.4;
+}
+function say(text,mode){if(state.voice)speak(text,mode);}
 const lastPick=new WeakMap();
 function pick(a){ // 같은 말이 연달아 나오지 않게
   let i=Math.floor(Math.random()*a.length);
   if(a.length>1&&i===lastPick.get(a))i=(i+1)%a.length;
   lastPick.set(a,i);return a[i];
+}
+function pickFit(a,maxSec,...args){ // 주어진 시간 안에 끝나는 멘트만 고르기
+  const txt=a.map(x=>typeof x==='function'?x(...args):x);
+  let idx=txt.map((t,i)=>i).filter(i=>estSec(txt[i])<=maxSec);
+  if(!idx.length)idx=[txt.reduce((b,t,i)=>estSec(t)<estSec(txt[b])?i:b,0)];
+  let i=idx[Math.floor(Math.random()*idx.length)];
+  if(idx.length>1&&i===lastPick.get(a))i=idx[(idx.indexOf(i)+1)%idx.length];
+  lastPick.set(a,i);return txt[i];
 }
 function spoken(n){return n.replace(/\s*\(.*?\)/g,'').replace(/-/g,' ');}
 function batchim(w){const c=w.charCodeAt(w.length-1);return c>=0xAC00&&c<=0xD7A3&&(c-0xAC00)%28!==0;}
@@ -930,27 +948,39 @@ function eyo(n){n=spoken(n);return n+(batchim(n)?'이에요':'예요');}
 // TTS가 띄어 쓴 보조용언("해 봐요")을 끊어 읽어서, 말로 할 때처럼 붙여 쓰고 문장을 짧게 둔다
 const ORD=['','첫 번째','두 번째','세 번째','네 번째'];
 const LINES={
-  ready:[n=>`반가워요! 오늘도 같이 운동해봐요. 첫 동작은 ${eyo(n)}.`, n=>`오늘도 와줘서 고마워요. ${spoken(n)}부터 천천히 시작할게요.`, n=>`준비됐나요? 무리하지 말고 할 수 있는 만큼만 해요. 첫 동작은 ${eyo(n)}.`],
+  ready:[n=>`반가워요! 첫 동작은 ${eyo(n)}.`, n=>`오늘도 와줘서 고마워요. ${spoken(n)}부터 시작할게요.`, n=>`준비됐나요? 무리하지 말고 할 수 있는 만큼만 해요. 첫 동작은 ${eyo(n)}.`],
   start:['자, 시작할게요!','좋아요, 같이 시작해요!','시작! 할 수 있어요.'],
   warm:[n=>`${spoken(n)}. 천천히 몸을 깨워볼게요.`, n=>`다음은 ${eyo(n)}. 가볍게 풀어줄게요.`],
   work:[n=>`${eyo(n)}. 같이 해봐요!`, n=>`이번엔 ${eyo(n)}. 천천히 정확하게 해볼게요.`, n=>`${spoken(n)} 시작할게요. 힘들면 쉬운 동작으로 해도 괜찮아요.`, n=>`${eyo(n)}. 잘할 수 있어요!`],
   last:[n=>`벌써 마지막 동작이에요! ${spoken(n)}, 조금만 더 힘내요.`, n=>`마지막이에요! ${spoken(n)}. 여기까지 온 것도 정말 대단해요.`],
   round:[(n,r)=>`${ORD[r]||r+'번째'} 라운드예요. 잘하고 있어요! ${spoken(n)}부터 다시 해볼게요.`, (n,r)=>`벌써 ${ORD[r]||r+'번째'} 라운드예요. 대단해요! ${spoken(n)}부터 시작할게요.`],
-  rest:[n=>`잘했어요! 잠깐 쉬면서 숨을 고르세요. 다음은 ${eyo(n)}.`, n=>`정말 잘하고 있어요. 천천히 숨 쉬세요. 다음은 ${eyo(n)}.`, n=>`수고했어요. 물 한 모금 마셔도 좋아요. 다음은 ${eyo(n)}.`, n=>`멋져요! 조금 쉬었다가 ${spoken(n)} 해볼게요.`],
+  rest:[n=>`잘했어요! 다음은 ${eyo(n)}.`, n=>`좋아요, 잠깐 쉬어요. 다음은 ${eyo(n)}.`, n=>`잘했어요! 잠깐 쉬면서 숨을 고르세요. 다음은 ${eyo(n)}.`, n=>`정말 잘하고 있어요. 천천히 숨 쉬세요. 다음은 ${eyo(n)}.`, n=>`수고했어요. 물 한 모금 마셔도 좋아요. 다음은 ${eyo(n)}.`, n=>`멋져요! 조금 쉬었다가 ${spoken(n)} 해볼게요.`],
   cool:[n=>`오늘 정말 애썼어요. 이제 천천히 풀어줄게요. ${eyo(n)}.`, n=>`${spoken(n)}. 숨을 길게 내쉬면서 편안하게 해주세요.`],
+  // 끝나기 5초 전 짧은 예고 (2초 안에 끝나는 길이)
+  lead:{
+    work:['이제 3초 남았어요.','곧 끝나요!','좀만 더 힘내세요!','거의 다 왔어요!','마지막까지 힘내요!'],
+    rest:['이제 3초 남았어요.','곧 시작해요!','준비하세요!'],
+    warm:['이제 3초 남았어요.','곧 다음 동작이에요.'],
+    cool:['이제 3초 남았어요.','곧 끝나요.']
+  },
   half:['절반 왔어요. 잘하고 있어요!','좋아요, 그대로 계속해요.','힘들면 잠깐 쉬어도 괜찮아요. 숨은 계속 쉬세요.','거의 다 왔어요. 조금만 더 버텨봐요!','지금 정말 잘하고 있어요.'],
   done:['오늘 운동 끝! 정말 수고 많았어요. 오늘도 해낸 나를 칭찬해주세요.','다 끝났어요! 꾸준히 하는 모습이 정말 멋져요. 푹 쉬세요.','오늘도 해냈어요! 내일 또 만나요.']
 };
-function speakPhase(ph){
-  const n=EX[ph.id].n;
-  if(P.i>0&&P.phases[P.i-1].kind==='ready')return say(pick(LINES.start));
+function speakPhase(ph,auto){
+  const n=EX[ph.id].n, mode=auto?'gentle':'';
+  // 이 구간에서 말할 수 있는 시간: 다음 안내(절반 응원·카운트다운·다음 구간)와 겹치지 않게
+  let budget = ph.kind==='work' ? ph.sec-Math.floor(ph.sec/2)-1
+             : ph.kind==='ready' ? ph.sec-1
+             : ph.sec-6; // 5초 전 예고 멘트 전에 끝나도록
+  if(auto&&curKind==='cd')budget-=1; // 카운트다운 끝을 기다리는 시간
+  if(P.i>0&&P.phases[P.i-1].kind==='ready')return say(pickFit(LINES.start,budget),mode);
   if(ph.kind==='work'){
     const isLast=!P.phases.slice(P.i+1).some(q=>q.kind==='work');
     const roundStart=ph.round>1&&P.phases.findIndex(q=>q.kind==='work'&&q.round===ph.round)===P.i;
-    if(isLast)return say(pick(LINES.last)(n));
-    if(roundStart)return say(pick(LINES.round)(n,ph.round));
+    if(isLast)return say(pickFit(LINES.last,budget,n),mode);
+    if(roundStart)return say(pickFit(LINES.round,budget,n,ph.round),mode);
   }
-  say(pick(LINES[ph.kind])(n));
+  say(pickFit(LINES[ph.kind],budget,n),mode);
 }
 let wakeLock=null;
 async function keepAwake(on){
@@ -966,7 +996,7 @@ function startMusic(){if(!P||!musicOn())return;MUSIC.volume((state.musicVol??50)
 function startWorkout(idx){
   closeSheet();
   const plan=planFor(idx);
-  const phases=[{kind:'ready',id:plan.phases[0].id,sec:5}].concat(plan.phases);
+  const phases=[{kind:'ready',id:plan.phases[0].id,sec:7}].concat(plan.phases);
   P={plan,phases,i:0,left:phases[0].sec,running:true,elapsed:0,timer:null,mood:null};
   $('pTitle').textContent=`DAY ${idx+1} · ${plan.type.t}`;
   $('finish').classList.remove('show');
@@ -980,13 +1010,13 @@ function startWorkout(idx){
   keepAwake(true);
 }
 function phaseLabel(k){return {ready:'준비',warm:'워밍업',work:'운동',rest:'휴식',cool:P.plan.type.recovery?'스트레칭':'쿨다운'}[k];}
-function showPhase(announce){
+function showPhase(announce,auto){
   const ph=P.phases[P.i], x=EX[ph.id];
   const pe=$('pPhase'); pe.textContent=phaseLabel(ph.kind); pe.className='p-phase '+ph.kind;
   if($('pFig').dataset.id!==ph.id){$('pFig').dataset.id=ph.id;$('pFig').textContent='';const svg=FIG.make(ph.id);if(svg)$('pFig').appendChild(svg);else $('pFig').textContent=x.e;}
   $('pFig').style.opacity=ph.kind==='rest'?.55:1;
   $('pName').textContent=ph.kind==='rest'?'잠깐 휴식':x.n;
-  const tip=state.level==='beginner'&&x.easy?' 💡 '+x.easy:'';
+  const tip=state.level==='beginner'&&x.easy?'\n💡 '+x.easy:'';
   $('pCue').textContent=ph.kind==='rest'?`다음: ${x.n} — 호흡을 고르세요`:ph.kind==='ready'?`첫 동작: ${x.n}. 자세를 준비하세요!`:x.c+tip;
   $('pRound').textContent=ph.round?`라운드 ${ph.round} / ${ph.rounds}`:'';
   const nx=ph.kind==='ready'?null:P.phases.slice(P.i+1).find(q=>q.kind!=='rest');
@@ -996,7 +1026,7 @@ function showPhase(announce){
   MUSIC.mode(ph.kind,P.plan.type.recovery);
   updateTime();
   if(announce){
-    speakPhase(ph);
+    speakPhase(ph,auto);
   }
 }
 function updateTime(){
@@ -1014,20 +1044,18 @@ function tick(){
   P.left--;
   if(P.phases[P.i].kind!=='ready')P.elapsed++;
   if(P.left>0&&P.left<=3)beep(660,.1);
-  if(P.phases[P.i].kind==='work'){ // 운동 끝나기 직전 카운트다운
-    if(P.left===5)say('이제 3초 남았어요.');
-    else if(P.left>=1&&P.left<=3)say(['하나','둘','셋'][P.left-1]+'!',true);
-  }
+  // 구간이 끝나기 5초 전 짧은 예고 → 마지막 3초는 알림음
+  if(P.left===5&&P.phases[P.i].kind!=='ready')say(pick(LINES.lead[P.phases[P.i].kind]),'cd');
   if(P.left<=0){next(true);return;}
   const cur=P.phases[P.i];
-  if(cur.kind==='work'&&cur.sec>=30&&P.left===Math.floor(cur.sec/2))say(pick(LINES.half));
+  if(cur.kind==='work'&&P.left===Math.floor(cur.sec/2)){const room=P.left-6;if(room>=1.8)say(pickFit(LINES.half,room));}
   updateTime();
 }
 function next(auto){
   if(P.i>=P.phases.length-1){finishWorkout();return;}
   P.i++;P.left=P.phases[P.i].sec;
   if(auto)beep(P.phases[P.i].kind==='rest'?520:990,.25,.2);
-  showPhase(true);
+  showPhase(true,auto);
 }
 function prev(){
   if(P.left<P.phases[P.i].sec-2||P.i===0){P.left=P.phases[P.i].sec;}
