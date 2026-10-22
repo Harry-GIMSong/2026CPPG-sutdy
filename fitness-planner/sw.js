@@ -1,5 +1,5 @@
 // 오프라인 실행용 서비스 워커: 앱 파일은 미리 저장하고, 페이지는 새 버전을 먼저 시도한다.
-const CACHE = 'fitness-planner-v3';
+const CACHE = 'fitness-planner-v4';
 const ASSETS = [
   './', 'index.html', 'women-beginner.html',
   'manifest.webmanifest', 'manifest-women.webmanifest',

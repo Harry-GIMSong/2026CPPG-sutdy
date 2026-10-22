@@ -1,8 +1,8 @@
 {
   "id": "./women-beginner.html",
-  "name": "여성 초급 홈트 4주",
-  "short_name": "여성 홈트",
-  "description": "하루 10~15분, 무릎에 부담 적은 여성 초급 홈트 플래너",
+  "name": "4주 홈트 쉬운 버전",
+  "short_name": "쉬운 홈트",
+  "description": "하루 10~15분, 무릎에 부담 적은 쉬운 홈트 플래너",
   "start_url": "./women-beginner.html",
   "scope": "./",
   "display": "standalone",
