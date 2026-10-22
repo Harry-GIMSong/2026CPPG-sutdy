@@ -8,7 +8,7 @@
   휴대폰 브라우저의 "홈 화면에 추가"로 앱처럼 쓸 수 있습니다.
 
 ## 휴대폰에 앱처럼 설치
-1. 휴대폰 브라우저로 `https://harry-gimsong.github.io/2026CPPG-sutdy/travel-map/` 를 엽니다.
+1. 휴대폰 브라우저로 `https://harry-gimsong.github.io/PR/travel-map/` 를 엽니다.
 2. **아이폰(Safari)**: 공유 버튼 → "홈 화면에 추가" / **안드로이드(Chrome)**: ⋮ 메뉴 → "홈 화면에 추가" 또는 "앱 설치"
 3. 홈 화면의 🗺️ "여행 지도" 아이콘으로 열면 주소창 없이 앱처럼 실행됩니다.
 
