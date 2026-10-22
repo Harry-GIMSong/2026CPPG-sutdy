@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#e8578a">
+<title>여성 초급 홈트 4주</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf5f6;
+  --surface:#ffffff;
+  --surface-2:#f5ebee;
+  --text:#1f1b18;
+  --muted:#6f665f;
+  --line:#e4ddd5;
+  --accent:#e8578a;
+  --accent-soft:#fde2ec;
+  --accent-text:#b02e5e;
+  --good:#1f9d6b;
+  --good-soft:#d9f3e7;
+  --rest:#3b82c4;
+  --rest-soft:#dcebf8;
+  --shadow:0 6px 24px rgba(40,25,10,.08);
+  --radius:18px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#16130f;
+    --surface:#211d19;
+    --surface-2:#2b2621;
+    --text:#f3eee8;
+    --muted:#a99f95;
+    --line:#3a332c;
+    --accent:#f27aa3;
+    --accent-soft:#4a2033;
+    --accent-text:#ffb3cc;
+    --good:#3ccf92;
+    --good-soft:#163a2b;
+    --rest:#6cb2ef;
+    --rest-soft:#18304a;
+    --shadow:0 6px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16130f;
+  --surface:#211d19;
+  --surface-2:#2b2621;
+  --text:#f3eee8;
+  --muted:#a99f95;
+  --line:#3a332c;
+  --accent:#f27aa3;
+  --accent-soft:#4a2033;
+  --accent-text:#ffb3cc;
+  --good:#3ccf92;
+  --good-soft:#163a2b;
+  --rest:#6cb2ef;
+  --rest-soft:#18304a;
+  --shadow:0 6px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Noto Sans KR",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit;color:inherit;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+.wrap{max-width:1040px;margin:0 auto;padding:20px 16px 80px}
+
+/* header */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-mark{width:40px;height:40px;border-radius:12px;background:var(--accent);display:grid;place-items:center;color:#fff;font-size:22px}
+.brand h1{font-size:20px;margin:0;font-weight:900;letter-spacing:-.02em}
+.brand p{margin:0;color:var(--muted);font-size:13px}
+.top-actions{display:flex;gap:8px;align-items:center}
+.switch{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:8px 12px;font-size:13px;font-weight:700;color:var(--accent-text);text-decoration:none;white-space:nowrap}
+.icon-btn{border:1px solid var(--line);background:var(--surface);border-radius:12px;width:40px;height:40px;display:grid;place-items:center;font-size:18px}
+
+/* hero */
+.hero{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;background:var(--surface);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.ring{position:relative;width:132px;height:132px}
+.ring svg{transform:rotate(-90deg)}
+.ring .ring-label{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.ring b{font-size:30px;font-weight:900;display:block;line-height:1}
+.ring small{color:var(--muted);font-size:12px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:var(--surface-2);border-radius:14px;padding:12px}
+.stat .v{font-size:22px;font-weight:900}
+.stat .k{font-size:12px;color:var(--muted)}
+.today-cta{margin-top:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.btn{border:none;border-radius:14px;padding:12px 18px;font-weight:700;background:var(--surface-2)}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.ghost{background:transparent;border:1px solid var(--line)}
+.btn.good{background:var(--good);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.today-text{font-size:14px;color:var(--muted)}
+
+/* settings bar */
+.settings{display:flex;flex-wrap:wrap;gap:12px;margin:16px 0 6px;align-items:center}
+.seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:3px}
+.seg button{border:none;background:transparent;padding:7px 12px;border-radius:9px;font-size:14px;font-weight:500;color:var(--muted)}
+.seg button.on{background:var(--accent);color:#fff}
+.field{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+.field input{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px 10px}
+
+/* weeks */
+h2.section{font-size:17px;margin:26px 0 10px;font-weight:900}
+.week{background:var(--surface);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin-bottom:14px}
+.week-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.week-head h3{margin:0;font-size:16px}
+.week-head span{font-size:13px;color:var(--muted)}
+.week-bar{height:6px;background:var(--surface-2);border-radius:99px;overflow:hidden;margin-bottom:12px}
+.week-bar i{display:block;height:100%;background:var(--good);border-radius:99px;transition:width .4s}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.day{border:1.5px solid var(--line);background:var(--bg);border-radius:14px;padding:10px 8px;text-align:left;display:flex;flex-direction:column;gap:2px;min-height:96px;position:relative;transition:transform .12s,border-color .12s}
+.day:hover{transform:translateY(-2px);border-color:var(--accent)}
+.day .dn{font-size:11px;color:var(--muted);font-weight:700}
+.day .em{font-size:22px;line-height:1.2}
+.day .tt{font-size:12px;font-weight:700;line-height:1.25}
+.day .mm{font-size:11px;color:var(--muted)}
+.day.done{background:var(--good-soft);border-color:var(--good)}
+.day.done::after{content:"✓";position:absolute;top:6px;right:8px;color:var(--good);font-weight:900}
+.day.today{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.day.today .dn{color:var(--accent-text)}
+.day.recovery:not(.done){background:var(--rest-soft);border-color:transparent}
+
+/* badges / test */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.card{background:var(--surface);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.card h3{margin:0 0 4px;font-size:16px}
+.card p.sub{margin:0 0 12px;color:var(--muted);font-size:13px}
+.badges{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.badge{background:var(--surface-2);border-radius:12px;padding:10px 6px;text-align:center;font-size:12px;color:var(--muted);filter:grayscale(1);opacity:.55}
+.badge .bi{font-size:26px;display:block}
+.badge.got{filter:none;opacity:1;color:var(--text);background:var(--accent-soft)}
+table.test{width:100%;border-collapse:collapse;font-size:14px}
+table.test th,table.test td{padding:6px 4px;text-align:left;border-bottom:1px solid var(--line)}
+table.test th{color:var(--muted);font-weight:500;font-size:12px}
+table.test input{width:70px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:5px 7px}
+.delta{font-weight:700;color:var(--good)}
+.delta.neg{color:var(--accent-text)}
+
+/* sheet (day detail) */
+.overlay{position:fixed;inset:0;background:rgba(10,6,3,.5);display:none;align-items:flex-end;justify-content:center;z-index:20}
+.overlay.show{display:flex}
+.sheet{background:var(--surface);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom))}
+@media (min-width:700px){.overlay{align-items:center}.sheet{border-radius:22px}}
+.sheet-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.sheet-head h3{margin:0;font-size:20px}
+.pill{display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:99px;background:var(--accent-soft);color:var(--accent-text);margin-right:4px}
+.pill.blue{background:var(--rest-soft);color:var(--rest)}
+.ex-list{list-style:none;padding:0;margin:14px 0}
+.ex-list li{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.ex-list .ee{font-size:24px;width:38px;height:38px;border-radius:10px;background:var(--surface-2);display:grid;place-items:center;flex:none}
+.ex-list .en{font-weight:700;font-size:14px}
+.ex-list .ed{font-size:12px;color:var(--muted)}
+.ex-list .es{margin-left:auto;font-size:13px;color:var(--muted);white-space:nowrap}
+.block-title{font-size:12px;font-weight:700;color:var(--muted);margin-top:14px;text-transform:uppercase;letter-spacing:.04em}
+.sheet-actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.sheet-actions .btn{flex:1}
+.log{background:var(--surface-2);border-radius:14px;padding:12px;margin-top:12px;font-size:14px}
+.moods{display:flex;gap:8px;margin:6px 0 10px}
+.moods button{flex:1;border:1.5px solid var(--line);background:var(--surface);border-radius:12px;padding:8px 4px;font-size:13px}
+.moods button.on{border-color:var(--accent);background:var(--accent-soft)}
+.moods .me{font-size:22px;display:block}
+textarea{width:100%;min-height:64px;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:8px 10px;resize:vertical}
+
+/* player */
+.player{position:fixed;inset:0;background:var(--bg);z-index:30;display:none;flex-direction:column}
+.player.show{display:flex}
+.p-top{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;gap:10px}
+.p-progress{height:6px;background:var(--surface-2);margin:0 16px;border-radius:99px;overflow:hidden}
+.p-progress i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s linear}
+.p-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;gap:6px}
+.p-phase{font-weight:900;font-size:14px;letter-spacing:.08em;padding:4px 12px;border-radius:99px;background:var(--accent-soft);color:var(--accent-text)}
+.p-phase.rest{background:var(--rest-soft);color:var(--rest)}
+.p-phase.warm,.p-phase.cool{background:var(--good-soft);color:var(--good)}
+.p-emoji{font-size:72px;line-height:1.1;margin-top:6px}
+.p-name{font-size:28px;font-weight:900;margin:0}
+.p-cue{color:var(--muted);max-width:420px;font-size:15px;margin:0}
+.p-timer{position:relative;width:220px;height:220px;margin:10px 0}
+.p-timer svg{transform:rotate(-90deg)}
+.p-timer .t{position:absolute;inset:0;display:grid;place-items:center;font-size:64px;font-weight:900;font-variant-numeric:tabular-nums}
+.p-round{font-size:13px;color:var(--muted)}
+.p-next{font-size:14px;color:var(--muted);background:var(--surface);border-radius:12px;padding:8px 14px}
+.p-controls{display:flex;justify-content:center;gap:14px;padding:16px 16px calc(24px + env(safe-area-inset-bottom))}
+.p-controls button{width:64px;height:64px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font-size:22px}
+.p-controls button.big{width:80px;height:80px;background:var(--accent);color:#fff;border:none;font-size:28px}
+.finish{display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center}
+.finish.show{display:flex}
+.finish .big-emoji{font-size:80px}
+.finish h2{margin:6px 0;font-size:26px}
+.finish .card{width:100%;max-width:420px;text-align:left;margin-top:14px}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;transition:.25s;z-index:50;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.foot{margin-top:24px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;font-size:13px;color:var(--muted)}
+.foot button{background:none;border:none;color:var(--muted);text-decoration:underline}
+
+@media (max-width:760px){
+  .hero{grid-template-columns:1fr;justify-items:center;text-align:center}
+  .today-cta{justify-content:center}
+  .stats{width:100%}
+  .days{grid-template-columns:repeat(4,1fr)}
+  .grid2{grid-template-columns:1fr}
+}
+@media (max-width:420px){
+  .days{grid-template-columns:repeat(3,1fr)}
+  .stat .v{font-size:18px}
+  .p-timer{width:180px;height:180px}
+  .p-timer svg{width:180px;height:180px}
+  .p-timer .t{font-size:52px}
+  .p-name{font-size:24px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark">🌸</div>
+      <div>
+        <h1>여성 초급 홈트 4주</h1>
+        <p>하루 10~15분, 무릎에 부담 적은 저충격 맨몸 루틴</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <a class="switch" href="index.html">💪 기본 버전</a>
+    <button class="icon-btn" id="themeBtn" title="테마 전환" aria-label="테마 전환">🌓</button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="ring">
+      <svg width="132" height="132" viewBox="0 0 132 132">
+        <circle cx="66" cy="66" r="56" fill="none" stroke="var(--surface-2)" stroke-width="12"/>
+        <circle id="ringFg" cx="66" cy="66" r="56" fill="none" stroke="var(--accent)" stroke-width="12" stroke-linecap="round" stroke-dasharray="351.86" stroke-dashoffset="351.86" style="transition:stroke-dashoffset .6s"/>
+      </svg>
+      <div class="ring-label"><div><b id="doneCount">0</b><small>/ 28일 완료</small></div></div>
+    </div>
+    <div>
+      <div class="stats">
+        <div class="stat"><div class="v" id="streak">0일</div><div class="k">연속 달성 🔥</div></div>
+        <div class="stat"><div class="v" id="totalMin">0분</div><div class="k">누적 운동 시간</div></div>
+        <div class="stat"><div class="v" id="curWeek">1주차</div><div class="k" id="curDayLabel">DAY 1 / 28</div></div>
+      </div>
+      <div class="today-cta">
+        <button class="btn primary" id="startToday">▶ 운동 시작</button>
+        <span class="today-text" id="todayText"></span>
+      </div>
+    </div>
+  </section>
+
+  <div class="settings">
+    <span class="pill">🌱 초급 전용 · 점프 없음</span>
+    <label class="field"><input type="checkbox" id="voiceToggle"> 음성 안내</label>
+  </div>
+
+  <h2 class="section">📅 4주 플랜</h2>
+  <div id="weeks"></div>
+
+  <div class="grid2" style="margin-top:14px">
+    <div class="card">
+      <h3>🏅 배지</h3>
+      <p class="sub">완벽보다 꾸준함! 오늘도 한 걸음</p>
+      <div class="badges" id="badges"></div>
+    </div>
+    <div class="card">
+      <h3>📈 체력 테스트</h3>
+      <p class="sub">1주차 시작 전과 4주차 완료 후에 측정해 변화를 확인하세요</p>
+      <table class="test">
+        <thead><tr><th>항목</th><th>시작</th><th>4주 후</th><th>변화</th></tr></thead>
+        <tbody id="testBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span>기록은 이 브라우저에만 저장됩니다.</span>
+    <button id="exportBtn">기록 내보내기</button>
+    <button id="resetBtn">전체 초기화</button>
+  </div>
+</div>
+
+<!-- Day detail sheet -->
+<div class="overlay" id="overlay">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-head">
+      <div>
+        <div id="sheetPills"></div>
+        <h3 id="sheetTitle"></h3>
+        <div class="today-text" id="sheetMeta"></div>
+      </div>
+      <button class="icon-btn" id="closeSheet" aria-label="닫기">✕</button>
+    </div>
+    <div id="sheetBody"></div>
+    <div id="sheetLog"></div>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="toggleDone"></button>
+      <button class="btn primary" id="startDay">▶ 운동 시작</button>
+    </div>
+  </div>
+</div>
+
+<!-- Workout player -->
+<div class="player" id="player">
+  <div class="p-top">
+    <button class="icon-btn" id="quitPlayer" aria-label="종료">✕</button>
+    <div class="today-text" id="pTitle"></div>
+    <div class="today-text" id="pRemain" style="min-width:40px;text-align:right"></div>
+  </div>
+  <div class="p-progress"><i id="pBar"></i></div>
+  <div class="p-main" id="pMain">
+    <div class="p-phase" id="pPhase">준비</div>
+    <div class="p-emoji" id="pEmoji">🧘</div>
+    <h2 class="p-name" id="pName"></h2>
+    <p class="p-cue" id="pCue"></p>
+    <div class="p-timer">
+      <svg width="220" height="220" viewBox="0 0 220 220">
+        <circle cx="110" cy="110" r="98" fill="none" stroke="var(--surface-2)" stroke-width="12"/>
+        <circle id="pRing" cx="110" cy="110" r="98" fill="none" stroke="var(--accent)" stroke-width="12" stroke-linecap="round" stroke-dasharray="615.75" stroke-dashoffset="0"/>
+      </svg>
+      <div class="t" id="pTime">3</div>
+    </div>
+    <div class="p-round" id="pRound"></div>
+    <div class="p-next" id="pNext"></div>
+  </div>
+  <div class="p-controls" id="pControls">
+    <button id="pPrev" aria-label="이전">⏮</button>
+    <button class="big" id="pPlay" aria-label="일시정지">⏸</button>
+    <button id="pSkip" aria-label="다음">⏭</button>
+  </div>
+  <div class="finish" id="finish">
+    <div class="big-emoji">🎉</div>
+    <h2>오늘 운동 완료!</h2>
+    <div class="today-text" id="finishMeta"></div>
+    <div class="card">
+      <div style="font-weight:700;font-size:14px">오늘 컨디션은 어땠나요?</div>
+      <div class="moods" id="finishMoods"></div>
+      <textarea id="finishNote" placeholder="메모 (예: 푸시업 무릎 없이 10개 성공!)"></textarea>
+    </div>
+    <button class="btn primary" id="finishSave" style="margin-top:14px;min-width:200px">저장하고 닫기</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- 운동 라이브러리 ---------- */
+const EX = {
+  march:      {n:'제자리 걷기',        e:'🚶', c:'팔을 크게 흔들며 무릎을 골반 높이까지 올리세요.'},
+  armCircle:  {n:'팔 돌리기',          e:'🙆', c:'어깨를 크게 앞뒤로 돌려 관절을 풀어주세요.'},
+  hipCircle:  {n:'골반 돌리기',        e:'🌀', c:'손을 허리에 두고 골반을 천천히 크게 돌리세요.'},
+  jumpingJack:{n:'점핑잭',            e:'⭐', c:'팔과 다리를 동시에 벌렸다 모으기.', easy:'점프 없이 한 발씩 옆으로 내딛어도 OK.'},
+  squat:      {n:'스쿼트',            e:'🏋️', c:'발은 어깨너비, 엉덩이를 뒤로 빼며 허벅지가 바닥과 평행할 때까지.', easy:'의자에 앉았다 일어나는 동작으로 대체.'},
+  sumoSquat:  {n:'와이드 스쿼트',      e:'🦵', c:'발을 넓게 벌리고 발끝은 바깥으로. 무릎이 발끝 방향을 향하게.'},
+  lunge:      {n:'런지 (번갈아)',      e:'🚶‍♀️', c:'한 발 앞으로 내딛고 양 무릎 90도. 상체는 곧게.', easy:'벽이나 의자를 잡고 진행하세요.'},
+  glute:      {n:'힙 브릿지',          e:'🌉', c:'누워서 무릎을 세우고 엉덩이를 들어 올려 1초 버티기.'},
+  wallSit:    {n:'월 싯',             e:'🧱', c:'벽에 등을 대고 의자에 앉은 자세로 버티기.', easy:'무릎 각도를 덜 굽혀도 괜찮아요.'},
+  calf:       {n:'카프 레이즈',        e:'🦶', c:'발뒤꿈치를 최대한 들었다 천천히 내리기.'},
+  squatJump:  {n:'점프 스쿼트',        e:'🦘', c:'스쿼트 후 폭발적으로 점프, 부드럽게 착지.', easy:'점프 대신 까치발로 일어나기.'},
+  pushup:     {n:'푸시업',            e:'💪', c:'머리부터 발끝까지 일직선. 가슴이 바닥 가까이 갈 때까지.', easy:'무릎을 바닥에 대고 진행하세요.'},
+  dips:       {n:'의자 딥스',          e:'🪑', c:'의자 끝을 잡고 팔꿈치를 뒤로 굽혀 몸을 내렸다 올리기.', easy:'무릎을 더 굽혀 체중 부담을 줄이세요.'},
+  shoulderTap:{n:'플랭크 숄더 탭',     e:'🤚', c:'하이 플랭크에서 반대쪽 어깨를 번갈아 터치. 골반이 흔들리지 않게.', easy:'무릎을 대고 진행하세요.'},
+  plank:      {n:'플랭크',            e:'🧍', c:'팔꿈치를 어깨 아래, 배에 힘을 주고 몸을 일직선으로.', easy:'무릎을 대고 버티세요.'},
+  sidePlank:  {n:'사이드 플랭크',      e:'📐', c:'옆으로 누워 팔꿈치로 지지. 절반 시간마다 방향 전환.', easy:'아래쪽 무릎을 바닥에 대세요.'},
+  superman:   {n:'슈퍼맨',            e:'🦸', c:'엎드려 팔다리를 동시에 들어 2초 버티고 내리기.'},
+  birdDog:    {n:'버드 독',           e:'🐕', c:'네발 자세에서 반대 팔·다리를 뻗어 균형 잡기.'},
+  deadBug:    {n:'데드 버그',          e:'🪲', c:'누워서 허리를 바닥에 붙이고 반대 팔·다리를 천천히 뻗기.'},
+  crunch:     {n:'크런치',            e:'🔄', c:'무릎을 세우고 어깨만 바닥에서 들어 올리기. 목은 당기지 않기.'},
+  bicycle:    {n:'바이시클 크런치',    e:'🚴', c:'팔꿈치와 반대 무릎을 번갈아 가까이.', easy:'천천히, 다리를 높게 두세요.'},
+  legRaise:   {n:'레그 레이즈',        e:'🦿', c:'누워서 다리를 곧게 들어 올렸다 바닥에 닿기 직전까지 내리기.', easy:'무릎을 굽혀서 진행하세요.'},
+  climber:    {n:'마운틴 클라이머',    e:'⛰️', c:'하이 플랭크에서 무릎을 가슴 쪽으로 번갈아 빠르게.', easy:'천천히 한 발씩 당기세요.'},
+  highKnees:  {n:'하이 니즈',          e:'🏃', c:'제자리에서 무릎을 높이 올리며 뛰기.', easy:'뛰지 말고 빠르게 걸으세요.'},
+  buttKick:   {n:'버트 킥',            e:'🦵', c:'뒤꿈치가 엉덩이에 닿도록 제자리 뛰기.', easy:'걸으면서 뒤꿈치를 차올리세요.'},
+  skater:     {n:'스케이터',          e:'⛸️', c:'좌우로 넓게 점프하며 반대 다리를 뒤로 교차.', easy:'점프 없이 옆으로 스텝.'},
+  burpee:     {n:'버피',              e:'🔥', c:'스쿼트 → 플랭크 → 다시 일어나 점프.', easy:'점프와 푸시업 없이 한 발씩 뒤로 빼기.'},
+  wallPushup: {n:'벽 푸시업',          e:'🧱', c:'벽에 손을 짚고 몸을 일직선으로 유지하며 가슴을 벽 가까이.', easy:'벽에 더 가까이 서면 쉬워져요.'},
+  kneePushup: {n:'무릎 푸시업',        e:'💪', c:'무릎을 대고 머리부터 무릎까지 일직선, 가슴을 바닥 가까이.', easy:'내려갈 때만 천천히 해도 충분해요.'},
+  donkeyKick: {n:'동키 킥',            e:'🐴', c:'네발 자세에서 무릎 90도를 유지하며 발바닥을 천장으로. 절반 시간마다 교대.', easy:'작은 범위로 엉덩이 힘만 느껴보세요.'},
+  fireHydrant:{n:'파이어 하이드런트',  e:'🚒', c:'네발 자세에서 무릎을 옆으로 들어 올리기. 골반은 고정. 절반 시간마다 교대.'},
+  clamshell:  {n:'클램쉘',            e:'🐚', c:'옆으로 누워 무릎을 굽히고 발은 붙인 채 위쪽 무릎만 열기. 절반 시간마다 교대.'},
+  sideLegRaise:{n:'사이드 레그 레이즈', e:'🦵', c:'옆으로 누워 위쪽 다리를 곧게 들어 올렸다 천천히. 절반 시간마다 교대.'},
+  reverseLunge:{n:'리버스 런지',       e:'↩️', c:'한 발을 뒤로 내딛어 앉았다 돌아오기. 앞 무릎이 발끝을 넘지 않게.', easy:'의자를 잡고 범위를 작게 해도 OK.'},
+  stepJack:   {n:'스텝 잭',            e:'✨', c:'점프 없이 한 발씩 옆으로 내딛으며 팔을 머리 위로.'},
+  heelTouch:  {n:'힐 터치',            e:'👆', c:'누워서 무릎을 세우고 어깨를 살짝 든 채 좌우 발뒤꿈치 터치.'},
+  kneePlank:  {n:'무릎 플랭크',        e:'🧍‍♀️', c:'무릎과 팔꿈치로 지지하고 배꼽을 당겨 몸을 일직선으로.', easy:'힘들면 10초 쉬고 다시!'},
+  pelvicTilt: {n:'골반 기울이기',      e:'🌸', c:'누워서 무릎 세우고 숨을 내쉬며 허리를 바닥에 꾹 눌렀다 풀기.'},
+  hamstring:  {n:'햄스트링 스트레칭',  e:'🙇', c:'다리를 펴고 상체를 숙여 허벅지 뒤를 늘려주세요.'},
+  quad:       {n:'허벅지 앞 스트레칭', e:'🦩', c:'한 발을 뒤로 잡아 당기기. 절반 시간마다 교대.'},
+  chest:      {n:'가슴 열기',          e:'🤲', c:'양손을 뒤로 깍지 끼고 가슴을 활짝 펴기.'},
+  childPose:  {n:'아기 자세',          e:'🧎', c:'무릎 꿇고 팔을 앞으로 뻗어 등을 길게 늘리기.'},
+  catCow:     {n:'고양이-소 자세',     e:'🐈', c:'네발 자세에서 숨을 마시며 등을 내리고, 내쉬며 둥글게.'},
+  cobra:      {n:'코브라',            e:'🐍', c:'엎드려 손으로 바닥을 밀며 상체를 부드럽게 들어 올리기.'},
+  hipFlexor:  {n:'고관절 스트레칭',    e:'🧘', c:'런지 자세에서 골반을 앞으로 밀어 엉덩이 앞쪽 늘리기. 교대.'},
+  twist:      {n:'누워서 척추 비틀기', e:'🌙', c:'누워서 무릎을 한쪽으로 넘기고 시선은 반대로. 교대.'},
+  breath:     {n:'복식 호흡',          e:'🌬️', c:'코로 4초 마시고, 입으로 6초 길게 내쉬기.'}
+};
+
+/* ---------- 요일별 루틴 ---------- */
+const DAY_TYPES = [
+  {t:'힙업 & 하체',    e:'🍑', main:['glute','squat','donkeyKick','fireHydrant','reverseLunge']},
+  {t:'코어 & 뱃살',    e:'🎯', main:['pelvicTilt','deadBug','heelTouch','kneePlank','birdDog']},
+  {t:'저충격 유산소',  e:'💃', main:['stepJack','march','buttKick','skater','sumoSquat']},
+  {t:'팔뚝 & 바른 자세', e:'🦋', main:['wallPushup','superman','dips','birdDog','kneePushup']},
+  {t:'허벅지 라인',    e:'🦵', main:['sumoSquat','sideLegRaise','clamshell','wallSit','calf']},
+  {t:'전신 토닝',      e:'✨', main:['squat','kneePushup','glute','stepJack','kneePlank']},
+  {t:'회복 요가 스트레칭', e:'🧘‍♀️', recovery:true,
+   main:['breath','catCow','childPose','cobra','hamstring','hipFlexor','chest','twist']}
+];
+
+const WEEKS = [
+  {t:'몸 깨우기',     d:'동작을 천천히 정확하게', count:3, rounds:3, work:30, rest:25},
+  {t:'습관 만들기',   d:'동작을 하나 더 추가해요', count:4, rounds:3, work:30, rest:20},
+  {t:'탄력 붙이기',   d:'5가지 동작으로 서킷 완성', count:5, rounds:3, work:30, rest:20},
+  {t:'나를 칭찬하기', d:'4주 완주, 달라진 몸을 느껴요', count:5, rounds:3, work:35, rest:15}
+];
+const LEVELS = {beginner:{label:'초급', dw:0, dr:0}};
+const WARMUP = ['march','armCircle','hipCircle'];
+const COOLDOWN = ['hamstring','chest'];
+const WARM_SEC = 30, COOL_SEC = 30;
+const MOODS = [{e:'😮‍💨',t:'힘들었어요'},{e:'🙂',t:'적당했어요'},{e:'😊',t:'개운해요'}];
+const TESTS = [{k:'pushup',n:'무릎 푸시업 최대 (개)'},{k:'squat',n:'1분 스쿼트 (개)'},{k:'plank',n:'플랭크 (초)'}];
+
+/* ---------- 상태 ---------- */
+const KEY = 'women-beginner-4week-v1';
+function todayISO(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function load(){
+  try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.days){s.level='beginner';return s;}}catch(e){}
+  return {level:'beginner',voice:false,days:{},tests:{},theme:null};
+}
+let state = load();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+
+/* ---------- 플랜 생성 ---------- */
+function planFor(idx){ // idx 0..27
+  const w = Math.floor(idx/7), d = idx%7;
+  const wk = WEEKS[w], type = DAY_TYPES[d], lv = LEVELS[state.level];
+  const phases = [];
+  WARMUP.forEach(id=>phases.push({kind:'warm',id,sec:WARM_SEC}));
+  if(type.recovery){
+    const hold = 60 + w*5 + lv.dw; // 55~80초
+    type.main.forEach(id=>phases.push({kind:'cool',id,sec:hold}));
+  }else{
+    const list = type.main.slice(0,wk.count);
+    const work = wk.work+lv.dw, rest = wk.rest+lv.dr;
+    for(let r=1;r<=wk.rounds;r++){
+      list.forEach((id,i)=>{
+        phases.push({kind:'work',id,sec:work,round:r,rounds:wk.rounds});
+        const last = r===wk.rounds && i===list.length-1;
+        if(!last) phases.push({kind:'rest',id:list[(i+1)%list.length],sec:rest,round:r,rounds:wk.rounds});
+      });
+    }
+    COOLDOWN.forEach(id=>phases.push({kind:'cool',id,sec:COOL_SEC}));
+  }
+  const total = phases.reduce((a,p)=>a+p.sec,0);
+  return {idx,w,d,wk,type,phases,total,list: type.recovery?type.main:type.main.slice(0,wk.count)};
+}
+function mins(sec){return Math.round(sec/60);}
+function nextIncomplete(){for(let i=0;i<28;i++)if(!state.days[i])return i;return -1;}
+
+/* ---------- 렌더 ---------- */
+const $ = id=>document.getElementById(id);
+
+function render(){
+  $('voiceToggle').checked = !!state.voice;
+  applyTheme();
+
+  const ti = nextIncomplete(); // 다음에 할 DAY
+  let html='';
+  for(let w=0;w<4;w++){
+    const wk=WEEKS[w];
+    let done=0, cells='';
+    for(let d=0;d<7;d++){
+      const i=w*7+d, p=planFor(i), rec=state.days[i];
+      if(rec)done++;
+      const cls=['day']; if(rec)cls.push('done'); if(i===ti)cls.push('today'); if(p.type.recovery)cls.push('recovery');
+      cells+=`<button class="${cls.join(' ')}" data-idx="${i}" aria-label="${i+1}일차 ${p.type.t}">
+        <span class="dn">DAY ${i+1}${i===ti?' · NEXT':''}</span>
+        <span class="em">${rec&&rec.mood!=null?MOODS[rec.mood].e:p.type.e}</span>
+        <span class="tt">${p.type.t}</span>
+        <span class="mm">약 ${mins(p.total)}분</span>
+      </button>`;
+    }
+    html+=`<div class="week">
+      <div class="week-head"><h3>${w+1}주차 · ${wk.t}</h3><span>${wk.d} · ${done}/7</span></div>
+      <div class="week-bar"><i style="width:${done/7*100}%"></i></div>
+      <div class="days">${cells}</div></div>`;
+  }
+  $('weeks').innerHTML=html;
+
+  // hero
+  const doneN = Object.keys(state.days).length;
+  $('doneCount').textContent=doneN;
+  $('ringFg').style.strokeDashoffset = 351.86*(1-doneN/28);
+  $('streak').textContent=calcStreak()+'일';
+  const totalSec=Object.values(state.days).reduce((a,r)=>a+(r.sec||0),0);
+  $('totalMin').textContent=mins(totalSec)+'분';
+
+  let label;
+  if(ti<0){label='28일 챌린지를 모두 완주했어요! 🏆';}
+  else{const p=planFor(ti);label=`DAY ${ti+1} · ${p.type.t} · 약 ${mins(p.total)}분`;}
+  const wNow = ti<0?3:Math.floor(ti/7);
+  $('curWeek').textContent=(wNow+1)+'주차';
+  $('curDayLabel').textContent=ti<0?'완주!':`DAY ${ti+1} / 28`;
+  $('todayText').textContent=label;
+  const sb=$('startToday');
+  sb.disabled = ti<0;
+  sb.dataset.idx = ti;
+
+  renderBadges(doneN);
+  renderTests();
+}
+
+function calcStreak(){
+  const dates=new Set(Object.values(state.days).map(r=>r.date));
+  const d=new Date(); d.setHours(0,0,0,0);
+  const iso=x=>x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
+  if(!dates.has(iso(d))) d.setDate(d.getDate()-1);
+  let n=0; while(dates.has(iso(d))){n++;d.setDate(d.getDate()-1);}
+  return n;
+}
+function bestStreak(){
+  const ds=[...new Set(Object.values(state.days).map(r=>r.date))].sort();
+  let best=0,cur=0,prev=null;
+  ds.forEach(s=>{const t=new Date(s+'T00:00:00');cur=(prev&&Math.round((t-prev)/86400000)===1)?cur+1:1;best=Math.max(best,cur);prev=t;});
+  return best;
+}
+function renderBadges(doneN){
+  const weekDone=w=>[0,1,2,3,4,5,6].every(d=>state.days[w*7+d]);
+  const list=[
+    {i:'👟',t:'첫 걸음',ok:doneN>=1},
+    {i:'📆',t:'1주 완주',ok:weekDone(0)},
+    {i:'🔥',t:'7일 연속',ok:bestStreak()>=7},
+    {i:'⛰️',t:'절반 돌파',ok:doneN>=14},
+    {i:'⏱️',t:'누적 5시간',ok:Object.values(state.days).reduce((a,r)=>a+(r.sec||0),0)>=18000},
+    {i:'🏆',t:'28일 완주',ok:doneN>=28}
+  ];
+  $('badges').innerHTML=list.map(b=>`<div class="badge ${b.ok?'got':''}"><span class="bi">${b.i}</span>${b.t}</div>`).join('');
+}
+function renderTests(){
+  $('testBody').innerHTML=TESTS.map(t=>{
+    const a=state.tests[t.k+'_a'], b=state.tests[t.k+'_b'];
+    let delta='–';
+    if(a!==undefined&&a!==''&&b!==undefined&&b!==''){
+      const diff=Number(b)-Number(a);
+      delta=`<span class="delta ${diff<0?'neg':''}">${diff>0?'+':''}${diff}</span>`;
+    }
+    return `<tr><td>${t.n}</td>
+      <td><input type="number" min="0" inputmode="numeric" data-test="${t.k}_a" value="${a??''}"></td>
+      <td><input type="number" min="0" inputmode="numeric" data-test="${t.k}_b" value="${b??''}"></td>
+      <td>${delta}</td></tr>`;
+  }).join('');
+}
+
+/* ---------- 상세 시트 ---------- */
+let openIdx=null;
+function openSheet(idx){
+  openIdx=idx;
+  const p=planFor(idx), rec=state.days[idx];
+  $('sheetPills').innerHTML=`<span class="pill">${p.w+1}주차 · ${p.wk.t}</span>${p.type.recovery?'<span class="pill blue">액티브 리커버리</span>':''}`;
+  $('sheetTitle').textContent=`DAY ${idx+1} · ${p.type.e} ${p.type.t}`;
+  const lv=LEVELS[state.level];
+  $('sheetMeta').textContent = p.type.recovery
+    ? `약 ${mins(p.total)}분 · 동작당 ${p.phases.find(x=>x.kind==='cool').sec}초 유지`
+    : `약 ${mins(p.total)}분 · ${p.wk.rounds}라운드 · 운동 ${p.wk.work+lv.dw}초 / 휴식 ${p.wk.rest+lv.dr}초 (${lv.label})`;
+
+  const li=(id,s)=>{const x=EX[id];const tip=state.level==='beginner'&&x.easy?` 💡 ${x.easy}`:'';
+    return `<li><span class="ee">${x.e}</span><div><div class="en">${x.n}</div><div class="ed">${x.c}${tip}</div></div><span class="es">${s}</span></li>`;};
+  let body=`<div class="block-title">워밍업 · ${WARMUP.length*WARM_SEC/60}분</div><ul class="ex-list">${WARMUP.map(id=>li(id,WARM_SEC+'초')).join('')}</ul>`;
+  if(p.type.recovery){
+    const hold=p.phases.find(x=>x.kind==='cool').sec;
+    body+=`<div class="block-title">스트레칭 플로우</div><ul class="ex-list">${p.list.map(id=>li(id,hold+'초')).join('')}</ul>`;
+  }else{
+    const work=p.wk.work+lv.dw;
+    body+=`<div class="block-title">메인 서킷 × ${p.wk.rounds}라운드</div><ul class="ex-list">${p.list.map(id=>li(id,work+'초')).join('')}</ul>`;
+    body+=`<div class="block-title">쿨다운 · 1분</div><ul class="ex-list">${COOLDOWN.map(id=>li(id,COOL_SEC+'초')).join('')}</ul>`;
+  }
+  $('sheetBody').innerHTML=body;
+
+  if(rec){
+    $('sheetLog').innerHTML=`<div class="log">✅ <b>완료</b> · ${mins(rec.sec||0)}분
+      ${rec.mood!=null?` · ${MOODS[rec.mood].e} ${MOODS[rec.mood].t}`:''}
+      ${rec.note?`<div style="margin-top:6px;white-space:pre-wrap">${escapeHtml(rec.note)}</div>`:''}</div>`;
+    $('toggleDone').textContent='완료 취소';
+    $('startDay').textContent='▶ 다시 하기';
+  }else{
+    $('sheetLog').innerHTML='';
+    $('toggleDone').textContent='✓ 완료로 표시';
+    $('startDay').textContent='▶ 운동 시작';
+  }
+  $('overlay').classList.add('show');
+}
+function closeSheet(){$('overlay').classList.remove('show');openIdx=null;}
+function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+/* ---------- 플레이어 ---------- */
+let P=null; // {plan, i, left, running, timer, elapsed}
+let audioCtx=null;
+function beep(freq=880,dur=.12,vol=.15){
+  try{
+    audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.frequency.value=freq;o.type='sine';g.gain.value=vol;
+    o.connect(g);g.connect(audioCtx.destination);
+    o.start();g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+dur);o.stop(audioCtx.currentTime+dur);
+  }catch(e){}
+}
+function say(text){
+  if(!state.voice||!('speechSynthesis' in window))return;
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';u.rate=1.05;speechSynthesis.speak(u);}catch(e){}
+}
+let wakeLock=null;
+async function keepAwake(on){
+  try{
+    if(on&&'wakeLock' in navigator){wakeLock=await navigator.wakeLock.request('screen');}
+    else if(!on&&wakeLock){await wakeLock.release();wakeLock=null;}
+  }catch(e){}
+}
+
+function startWorkout(idx){
+  closeSheet();
+  const plan=planFor(idx);
+  const phases=[{kind:'ready',id:plan.phases[0].id,sec:5}].concat(plan.phases);
+  P={plan,phases,i:0,left:phases[0].sec,running:true,elapsed:0,timer:null,mood:null};
+  $('pTitle').textContent=`DAY ${idx+1} · ${plan.type.t}`;
+  $('finish').classList.remove('show');
+  $('pMain').style.display='';$('pControls').style.display='';
+  $('player').classList.add('show');
+  document.body.style.overflow='hidden';
+  showPhase(true);
+  P.timer=setInterval(tick,1000);
+  keepAwake(true);
+}
+function phaseLabel(k){return {ready:'준비',warm:'워밍업',work:'운동',rest:'휴식',cool:P.plan.type.recovery?'스트레칭':'쿨다운'}[k];}
+function showPhase(announce){
+  const ph=P.phases[P.i], x=EX[ph.id];
+  const pe=$('pPhase'); pe.textContent=phaseLabel(ph.kind); pe.className='p-phase '+ph.kind;
+  $('pEmoji').textContent=ph.kind==='rest'?'😮‍💨':x.e;
+  $('pName').textContent=ph.kind==='rest'?'잠깐 휴식':x.n;
+  const tip=state.level==='beginner'&&x.easy?' 💡 '+x.easy:'';
+  $('pCue').textContent=ph.kind==='rest'?`다음: ${x.n} — 호흡을 고르세요`:ph.kind==='ready'?`첫 동작: ${x.n}. 자세를 준비하세요!`:x.c+tip;
+  $('pRound').textContent=ph.round?`라운드 ${ph.round} / ${ph.rounds}`:'';
+  const nx=ph.kind==='ready'?null:P.phases.slice(P.i+1).find(q=>q.kind!=='rest');
+  $('pNext').textContent=nx?`다음 → ${EX[nx.id].e} ${EX[nx.id].n}`:'마지막 동작이에요!';
+  $('pNext').style.visibility=ph.kind==='ready'?'hidden':'visible';
+  $('pRing').style.stroke = ph.kind==='rest'?'var(--rest)':(ph.kind==='work'||ph.kind==='ready')?'var(--accent)':'var(--good)';
+  updateTime();
+  if(announce){
+    if(ph.kind==='ready')say('준비하세요. 첫 동작은 '+x.n);
+    else if(ph.kind==='rest')say('휴식. 다음은 '+x.n);
+    else say(x.n);
+  }
+}
+function updateTime(){
+  const ph=P.phases[P.i];
+  $('pTime').textContent=P.left;
+  $('pRing').style.strokeDashoffset=615.75*(1-P.left/ph.sec);
+  const total=P.phases.reduce((a,q)=>a+q.sec,0);
+  const passed=P.phases.slice(0,P.i).reduce((a,q)=>a+q.sec,0)+(ph.sec-P.left);
+  $('pBar').style.width=(passed/total*100)+'%';
+  const rem=total-passed;
+  $('pRemain').textContent=Math.floor(rem/60)+':'+String(rem%60).padStart(2,'0');
+}
+function tick(){
+  if(!P||!P.running)return;
+  P.left--;
+  if(P.phases[P.i].kind!=='ready')P.elapsed++;
+  if(P.left>0&&P.left<=3)beep(660,.1);
+  if(P.left<=0){next(true);return;}
+  updateTime();
+}
+function next(auto){
+  if(P.i>=P.phases.length-1){finishWorkout();return;}
+  P.i++;P.left=P.phases[P.i].sec;
+  if(auto)beep(P.phases[P.i].kind==='rest'?520:990,.25,.2);
+  showPhase(true);
+}
+function prev(){
+  if(P.left<P.phases[P.i].sec-2||P.i===0){P.left=P.phases[P.i].sec;}
+  else{P.i--;P.left=P.phases[P.i].sec;}
+  showPhase(true);
+}
+function togglePlay(){
+  P.running=!P.running;
+  $('pPlay').textContent=P.running?'⏸':'▶';
+  $('pPlay').setAttribute('aria-label',P.running?'일시정지':'재개');
+}
+function finishWorkout(){
+  clearInterval(P.timer);P.running=false;
+  beep(784,.15);setTimeout(()=>beep(1046,.3),160);
+  say('수고하셨습니다! 오늘 운동 완료');
+  $('pMain').style.display='none';$('pControls').style.display='none';
+  $('finish').classList.add('show');
+  $('pBar').style.width='100%';$('pRemain').textContent='0:00';
+  $('finishMeta').textContent=`DAY ${P.plan.idx+1} · ${P.plan.type.t} · ${mins(P.elapsed)}분 운동`;
+  $('finishNote').value='';
+  P.mood=null;
+  $('finishMoods').innerHTML=MOODS.map((m,i)=>`<button data-mood="${i}"><span class="me">${m.e}</span>${m.t}</button>`).join('');
+}
+function closePlayer(){
+  if(P){clearInterval(P.timer);}
+  P=null;
+  try{speechSynthesis.cancel();}catch(e){}
+  $('player').classList.remove('show');
+  document.body.style.overflow='';
+  keepAwake(false);
+}
+
+/* ---------- 이벤트 ---------- */
+$('weeks').addEventListener('click',e=>{const b=e.target.closest('.day');if(b)openSheet(+b.dataset.idx);});
+$('closeSheet').onclick=closeSheet;
+$('overlay').addEventListener('click',e=>{if(e.target===$('overlay'))closeSheet();});
+$('startDay').onclick=()=>startWorkout(openIdx);
+$('startToday').onclick=()=>{const i=+$('startToday').dataset.idx;if(i>=0)openSheet(i);};
+$('toggleDone').onclick=()=>{
+  const i=openIdx;
+  if(state.days[i]){delete state.days[i];toast('완료를 취소했어요');}
+  else{state.days[i]={date:todayISO(),sec:planFor(i).total,mood:null,note:''};toast(`DAY ${i+1} 완료! 🎉`);}
+  save();render();openSheet(i);
+};
+$('voiceToggle').addEventListener('change',e=>{state.voice=e.target.checked;save();if(state.voice)say('음성 안내를 켰어요');});
+$('testBody').addEventListener('change',e=>{const k=e.target.dataset.test;if(!k)return;state.tests[k]=e.target.value;save();renderTests();});
+
+$('pPlay').onclick=togglePlay;
+$('pSkip').onclick=()=>next(false);
+$('pPrev').onclick=prev;
+$('quitPlayer').onclick=()=>{
+  if(P&&!$('finish').classList.contains('show')&&!confirm('운동을 중단할까요? 기록은 저장되지 않아요.'))return;
+  closePlayer();
+};
+$('finishMoods').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;P.mood=+b.dataset.mood;
+  document.querySelectorAll('#finishMoods button').forEach(x=>x.classList.toggle('on',x===b));});
+$('finishSave').onclick=()=>{
+  const i=P.plan.idx;
+  state.days[i]={date:todayISO(),sec:Math.max(P.elapsed,60),mood:P.mood,note:$('finishNote').value.trim()};
+  save();closePlayer();render();
+  const n=Object.keys(state.days).length;
+  toast(n===28?'28일 챌린지 완주! 정말 대단해요 🏆':`DAY ${i+1} 완료! 연속 ${calcStreak()}일째 🔥`);
+};
+document.addEventListener('keydown',e=>{
+  if($('player').classList.contains('show')&&P&&!$('finish').classList.contains('show')){
+    if(e.code==='Space'){e.preventDefault();togglePlay();}
+    else if(e.key==='ArrowRight')next(false);
+    else if(e.key==='ArrowLeft')prev();
+  }else if(e.key==='Escape'&&openIdx!==null)closeSheet();
+});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&P&&P.running)keepAwake(true);});
+
+$('themeBtn').onclick=()=>{
+  const dark = state.theme ? state.theme==='dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  state.theme = dark?'light':'dark'; save(); applyTheme();
+};
+function applyTheme(){if(state.theme)document.documentElement.setAttribute('data-theme',state.theme);else document.documentElement.removeAttribute('data-theme');}
+
+$('exportBtn').onclick=()=>{
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='women-beginner-'+todayISO()+'.json';
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+};
+$('resetBtn').onclick=()=>{
+  if(!confirm('모든 기록을 지우고 처음부터 다시 시작할까요?'))return;
+  state={level:state.level,voice:state.voice,days:{},tests:{},theme:state.theme};
+  save();render();toast('새로운 4주를 시작해요!');
+};
+
+let toastT;
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2200);}
+
+render();
+})();
+</script>
+</body>
+</html>
