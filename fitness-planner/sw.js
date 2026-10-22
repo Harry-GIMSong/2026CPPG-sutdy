@@ -1,10 +1,10 @@
 // 오프라인 실행용 서비스 워커: 앱 파일은 미리 저장하고, 페이지는 새 버전을 먼저 시도한다.
-const CACHE = 'fitness-planner-v4';
+const CACHE = 'fitness-planner-v5';
 const ASSETS = [
-  './', 'index.html', 'women-beginner.html',
-  'manifest.webmanifest', 'manifest-women.webmanifest',
-  'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png',
-  'icon-women-192.png', 'icon-women-512.png', 'icon-women-maskable-512.png', 'apple-touch-icon-women.png'
+  './', 'index.html', 'basic.html', 'easy.html',
+  'manifest-basic.webmanifest', 'manifest-easy.webmanifest',
+  'icon-basic-192.png', 'icon-basic-512.png', 'icon-basic-maskable-512.png', 'apple-touch-icon-basic.png',
+  'icon-easy-192.png', 'icon-easy-512.png', 'icon-easy-maskable-512.png', 'apple-touch-icon-easy.png'
 ];
 
 self.addEventListener('install', e => {
@@ -29,7 +29,7 @@ self.addEventListener('fetch', e => {
     e.respondWith(
       fetch(req)
         .then(res => { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); return res; })
-        .catch(() => caches.match(req, { ignoreSearch: true }).then(r => r || caches.match('index.html')))
+        .catch(() => caches.match(req, { ignoreSearch: true }).then(r => r || caches.match('basic.html')))
     );
     return;
   }

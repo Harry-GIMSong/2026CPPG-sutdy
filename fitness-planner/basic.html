@@ -3,29 +3,29 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#e8578a">
+<meta name="theme-color" content="#ff6b4a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="쉬운 홈트">
+<meta name="apple-mobile-web-app-title" content="맨몸 챌린지">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="manifest" href="manifest-women.webmanifest">
-<link rel="icon" href="apple-touch-icon-women.png">
-<link rel="apple-touch-icon" href="apple-touch-icon-women.png">
-<title>4주 홈트 쉬운 버전</title>
+<link rel="manifest" href="manifest-basic.webmanifest">
+<link rel="icon" href="apple-touch-icon-basic.png">
+<link rel="apple-touch-icon" href="apple-touch-icon-basic.png">
+<title>4주 맨몸 챌린지</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#faf5f6;
+  --bg:#f6f4f1;
   --surface:#ffffff;
-  --surface-2:#f5ebee;
+  --surface-2:#f0ece7;
   --text:#1f1b18;
   --muted:#6f665f;
   --line:#e4ddd5;
-  --accent:#e8578a;
-  --accent-soft:#fde2ec;
-  --accent-text:#b02e5e;
+  --accent:#ff6b4a;
+  --accent-soft:#ffe4dc;
+  --accent-text:#c2401f;
   --good:#1f9d6b;
   --good-soft:#d9f3e7;
   --rest:#3b82c4;
@@ -41,9 +41,9 @@
     --text:#f3eee8;
     --muted:#a99f95;
     --line:#3a332c;
-    --accent:#f27aa3;
-    --accent-soft:#4a2033;
-    --accent-text:#ffb3cc;
+    --accent:#ff7d5e;
+    --accent-soft:#4a2a20;
+    --accent-text:#ffb39f;
     --good:#3ccf92;
     --good-soft:#163a2b;
     --rest:#6cb2ef;
@@ -58,9 +58,9 @@
   --text:#f3eee8;
   --muted:#a99f95;
   --line:#3a332c;
-  --accent:#f27aa3;
-  --accent-soft:#4a2033;
-  --accent-text:#ffb3cc;
+  --accent:#ff7d5e;
+  --accent-soft:#4a2a20;
+  --accent-text:#ffb39f;
   --good:#3ccf92;
   --good-soft:#163a2b;
   --rest:#6cb2ef;
@@ -253,14 +253,14 @@ textarea{width:100%;min-height:64px;border:1px solid var(--line);border-radius:1
 <div class="wrap">
   <header class="top">
     <div class="brand">
-      <div class="brand-mark">🌸</div>
+      <div class="brand-mark">🔥</div>
       <div>
-        <h1>4주 홈트 쉬운 버전</h1>
-        <p>하루 10~15분, 무릎에 부담 적은 저충격 맨몸 루틴</p>
+        <h1>4주 맨몸 챌린지</h1>
+        <p>하루 10~20분, 도구 없이 건강한 몸 만들기</p>
       </div>
     </div>
     <div class="top-actions">
-      <a class="switch" href="index.html">💪 기본 버전</a>
+      <a class="switch" href="easy.html">🌸 쉬운 버전</a>
       <button class="icon-btn" id="installBtn" title="앱 설치" aria-label="앱 설치" hidden>📲</button>
       <button class="icon-btn" id="themeBtn" title="테마 전환" aria-label="테마 전환">🌓</button>
     </div>
@@ -288,7 +288,11 @@ textarea{width:100%;min-height:64px;border:1px solid var(--line);border-radius:1
   </section>
 
   <div class="settings">
-    <span class="pill">🌱 쉬운 버전 · 점프 없음</span>
+    <div class="seg" id="levelSeg" role="group" aria-label="난이도">
+      <button data-level="beginner">🌱 입문</button>
+      <button data-level="normal">💪 보통</button>
+      <button data-level="advanced">🚀 고급</button>
+    </div>
     <label class="field"><input type="checkbox" id="voiceToggle"> 음성 안내</label>
     <label class="field"><input type="checkbox" id="musicToggle"> 🎵 배경 음악</label>
     <input type="range" id="musicVol" min="0" max="100" step="5" aria-label="음악 볼륨" style="width:90px;accent-color:var(--accent)">
@@ -301,7 +305,7 @@ textarea{width:100%;min-height:64px;border:1px solid var(--line);border-radius:1
   <div class="grid2" style="margin-top:14px">
     <div class="card">
       <h3>🏅 배지</h3>
-      <p class="sub">완벽보다 꾸준함! 오늘도 한 걸음</p>
+      <p class="sub">꾸준함이 최고의 운동입니다</p>
       <div class="badges" id="badges"></div>
     </div>
     <div class="card">
@@ -417,17 +421,6 @@ const EX = {
   buttKick:   {n:'버트 킥',            e:'🦵', c:'뒤꿈치가 엉덩이에 닿도록 제자리 뛰기.', easy:'걸으면서 뒤꿈치를 차올리세요.'},
   skater:     {n:'스케이터',          e:'⛸️', c:'좌우로 넓게 점프하며 반대 다리를 뒤로 교차.', easy:'점프 없이 옆으로 스텝.'},
   burpee:     {n:'버피',              e:'🔥', c:'스쿼트 → 플랭크 → 다시 일어나 점프.', easy:'점프와 푸시업 없이 한 발씩 뒤로 빼기.'},
-  wallPushup: {n:'벽 푸시업',          e:'🧱', c:'벽에 손을 짚고 몸을 일직선으로 유지하며 가슴을 벽 가까이.', easy:'벽에 더 가까이 서면 쉬워져요.'},
-  kneePushup: {n:'무릎 푸시업',        e:'💪', c:'무릎을 대고 머리부터 무릎까지 일직선, 가슴을 바닥 가까이.', easy:'내려갈 때만 천천히 해도 충분해요.'},
-  donkeyKick: {n:'동키 킥',            e:'🐴', c:'네발 자세에서 무릎 90도를 유지하며 발바닥을 천장으로. 절반 시간마다 교대.', easy:'작은 범위로 엉덩이 힘만 느껴보세요.'},
-  fireHydrant:{n:'파이어 하이드런트',  e:'🚒', c:'네발 자세에서 무릎을 옆으로 들어 올리기. 골반은 고정. 절반 시간마다 교대.'},
-  clamshell:  {n:'클램쉘',            e:'🐚', c:'옆으로 누워 무릎을 굽히고 발은 붙인 채 위쪽 무릎만 열기. 절반 시간마다 교대.'},
-  sideLegRaise:{n:'사이드 레그 레이즈', e:'🦵', c:'옆으로 누워 위쪽 다리를 곧게 들어 올렸다 천천히. 절반 시간마다 교대.'},
-  reverseLunge:{n:'리버스 런지',       e:'↩️', c:'한 발을 뒤로 내딛어 앉았다 돌아오기. 앞 무릎이 발끝을 넘지 않게.', easy:'의자를 잡고 범위를 작게 해도 OK.'},
-  stepJack:   {n:'스텝 잭',            e:'✨', c:'점프 없이 한 발씩 옆으로 내딛으며 팔을 머리 위로.'},
-  heelTouch:  {n:'힐 터치',            e:'👆', c:'누워서 무릎을 세우고 어깨를 살짝 든 채 좌우 발뒤꿈치 터치.'},
-  kneePlank:  {n:'무릎 플랭크',        e:'🧍‍♀️', c:'무릎과 팔꿈치로 지지하고 배꼽을 당겨 몸을 일직선으로.', easy:'힘들면 10초 쉬고 다시!'},
-  pelvicTilt: {n:'골반 기울이기',      e:'🌸', c:'누워서 무릎 세우고 숨을 내쉬며 허리를 바닥에 꾹 눌렀다 풀기.'},
   hamstring:  {n:'햄스트링 스트레칭',  e:'🙇', c:'다리를 펴고 상체를 숙여 허벅지 뒤를 늘려주세요.'},
   quad:       {n:'허벅지 앞 스트레칭', e:'🦩', c:'한 발을 뒤로 잡아 당기기. 절반 시간마다 교대.'},
   chest:      {n:'가슴 열기',          e:'🤲', c:'양손을 뒤로 깍지 끼고 가슴을 활짝 펴기.'},
@@ -491,17 +484,6 @@ const VIS = {
   cobra:      {props:['mat'], ms:3600, hold:.25, f:[{t:100,h:105,a1:-70,f1:90,a2:-70,f2:90,l1:-90,s1:-90,l2:-90,s2:-90,x:88},{t:118,h:140,a1:-25,f1:90,a2:-25,f2:90,l1:-90,s1:-90,l2:-90,s2:-90,x:88}]},
   hipFlexor:  {props:['mat'], ms:3600, hold:.2, f:[{t:182,a1:40,f1:70,a2:40,f2:70,l1:95,s1:0,l2:-25,s2:-90,fx:150},{t:186,h:190,a1:45,f1:75,a2:45,f2:75,l1:106,s1:0,l2:-40,s2:-90,fx:150}]},
   twist:      {props:['mat'], ms:3600, hold:.25, f:[{...SUPINE,l1:150,s1:40,l2:150,s2:40},{...SUPINE,h:-100,l1:112,s1:30,l2:118,s2:36}]},
-  wallPushup: {props:['wallR'], ms:2000, hold:.15, f:[{t:160,h:165,a1:92,f1:92,a2:92,f2:92,l1:-18,s1:-18,l2:-18,s2:-18,hx:150},{t:148,h:152,a1:35,f1:145,a2:35,f2:145,l1:-26,s1:-26,l2:-26,s2:-26,hx:150}]},
-  kneePushup: {props:['mat'], ms:2000, hold:.15, f:[{t:130,h:130,a1:0,f1:0,a2:0,f2:0,l1:-50,s1:-140,l2:-50,s2:-140,x:80},{t:100,h:102,a1:-100,f1:40,a2:-100,f2:40,l1:-80,s1:-150,l2:-80,s2:-150,x:86}]},
-  kneePlank:  {props:['mat'], ms:3000, f:[{t:109,h:110,a1:0,f1:90,a2:0,f2:90,l1:-71,s1:-150,l2:-71,s2:-150,x:80},{t:110,h:114,a1:0,f1:90,a2:0,f2:90,l1:-71,s1:-150,l2:-71,s2:-150,x:80}]},
-  donkeyKick: {props:['mat'], ms:1800, hold:.2, f:[QUAD,{...QUAD,l1:-95,s1:180}]},
-  fireHydrant:{props:['mat'], ms:1800, hold:.2, f:[QUAD,{...QUAD,l1:-50,s1:-95}]},
-  clamshell:  {v:'front', props:['mat'], L:{l:18}, ms:1800, hold:.2, f:[{t:-90,h:-105,a1:60,f1:0,a2:-90,f2:-90,l1:100,s1:95,l2:95,s2:92,x:120},{t:-90,h:-105,a1:60,f1:0,a2:-90,f2:-90,l1:150,s1:108,l2:95,s2:92,x:120}]},
-  sideLegRaise:{v:'front', props:['mat'], ms:1800, hold:.2, f:[{t:-90,h:-105,a1:90,f1:90,a2:-90,f2:-90,l1:92,s1:92,l2:90,s2:90,x:110},{t:-90,h:-105,a1:90,f1:90,a2:-90,f2:-90,l1:128,s1:128,l2:90,s2:90,x:110}]},
-  reverseLunge:{ms:2200, hold:.2, f:[{a1:-30,f1:60,a2:-30,f2:60,fx:116},{a1:-30,f1:60,a2:-30,f2:60,l1:72,s1:0,l2:-14,s2:-80,fx:116}]},
-  stepJack:   {v:'front', ms:2000, f:[{a1:-12,f1:-8,a2:12,f2:8,l1:-4,s1:-4,l2:4,s2:4},{a1:-145,f1:-165,a2:145,f2:165,l1:-4,s1:-4,l2:26,s2:26},{a1:-12,f1:-8,a2:12,f2:8,l1:-4,s1:-4,l2:4,s2:4},{a1:-145,f1:-165,a2:145,f2:165,l1:-26,s1:-26,l2:4,s2:4}]},
-  heelTouch:  {props:['mat'], ms:1600, f:[{...SUPINE,t:-108,h:-130,a1:96,f1:96,a2:80,f2:80,l1:140,s1:15,l2:140,s2:15},{...SUPINE,t:-108,h:-130,a1:80,f1:80,a2:96,f2:96,l1:140,s1:15,l2:140,s2:15}]},
-  pelvicTilt: {props:['mat'], ms:3000, hold:.25, f:[{...SUPINE,c:5,l1:145,s1:-5,l2:145,s2:-5},{...SUPINE,c:-3,l1:140,s1:-5,l2:140,s2:-5}]},
   breath:     {props:['mat'], ms:5000, f:[{t:180,a1:25,f1:115,a2:15,f2:150,l1:90,s1:-75,l2:85,s2:-100,x:90},{t:182,h:186,a1:28,f1:120,a2:20,f2:160,l1:90,s1:-75,l2:85,s2:-100,x:90}]}
 };
 
@@ -596,35 +578,39 @@ window.__FIG = FIG;
 
 /* ---------- 요일별 루틴 ---------- */
 const DAY_TYPES = [
-  {t:'힙업 & 하체',    e:'🍑', main:['glute','squat','donkeyKick','fireHydrant','reverseLunge']},
-  {t:'코어 & 뱃살',    e:'🎯', main:['pelvicTilt','deadBug','heelTouch','kneePlank','birdDog']},
-  {t:'저충격 유산소',  e:'💃', main:['stepJack','march','buttKick','skater','sumoSquat']},
-  {t:'팔뚝 & 바른 자세', e:'🦋', main:['wallPushup','superman','dips','birdDog','kneePushup']},
-  {t:'허벅지 라인',    e:'🦵', main:['sumoSquat','sideLegRaise','clamshell','wallSit','calf']},
-  {t:'전신 토닝',      e:'✨', main:['squat','kneePushup','glute','stepJack','kneePlank']},
-  {t:'회복 요가 스트레칭', e:'🧘‍♀️', recovery:true,
-   main:['breath','catCow','childPose','cobra','hamstring','hipFlexor','chest','twist']}
+  {t:'전신 근력',      e:'🏋️', main:['squat','pushup','glute','plank','lunge','superman']},
+  {t:'하체 & 엉덩이',  e:'🍑', main:['sumoSquat','lunge','glute','wallSit','calf','squatJump']},
+  {t:'유산소 HIIT',    e:'⚡', main:['jumpingJack','highKnees','climber','buttKick','skater','burpee']},
+  {t:'코어 집중',      e:'🎯', main:['crunch','plank','bicycle','deadBug','legRaise','sidePlank']},
+  {t:'상체 & 자세',    e:'🦾', main:['pushup','dips','superman','shoulderTap','birdDog','plank']},
+  {t:'전신 서킷',      e:'🔥', main:['burpee','squat','pushup','climber','lunge','plank']},
+  {t:'회복 스트레칭',  e:'🧘', recovery:true,
+   main:['breath','catCow','childPose','cobra','hamstring','quad','hipFlexor','chest','twist']}
 ];
 
 const WEEKS = [
-  {t:'몸 깨우기',     d:'동작을 천천히 정확하게', count:3, rounds:3, work:30, rest:25},
-  {t:'습관 만들기',   d:'동작을 하나 더 추가해요', count:4, rounds:3, work:30, rest:20},
-  {t:'탄력 붙이기',   d:'5가지 동작으로 서킷 완성', count:5, rounds:3, work:30, rest:20},
-  {t:'나를 칭찬하기', d:'4주 완주, 달라진 몸을 느껴요', count:5, rounds:3, work:35, rest:15}
+  {t:'기초 다지기',   d:'동작을 정확히 익히는 주', count:4, rounds:3, work:30, rest:20},
+  {t:'습관 만들기',   d:'운동 시간을 조금씩 늘려요', count:5, rounds:3, work:35, rest:20},
+  {t:'강도 올리기',   d:'휴식은 줄이고 동작은 늘리고', count:6, rounds:3, work:35, rest:15},
+  {t:'완성 & 도전',   d:'4주의 결실을 확인하는 주', count:6, rounds:3, work:40, rest:15}
 ];
-const LEVELS = {beginner:{label:'쉬운 버전', dw:0, dr:0}};
+const LEVELS = {
+  beginner:{label:'입문', dw:-5, dr:5},
+  normal:  {label:'보통', dw:0,  dr:0},
+  advanced:{label:'고급', dw:5,  dr:-5}
+};
 const WARMUP = ['march','armCircle','hipCircle'];
 const COOLDOWN = ['hamstring','chest'];
 const WARM_SEC = 30, COOL_SEC = 30;
-const MOODS = [{e:'😮‍💨',t:'힘들었어요'},{e:'🙂',t:'적당했어요'},{e:'😊',t:'개운해요'}];
-const TESTS = [{k:'pushup',n:'무릎 푸시업 최대 (개)'},{k:'squat',n:'1분 스쿼트 (개)'},{k:'plank',n:'플랭크 (초)'}];
+const MOODS = [{e:'😫',t:'힘들었어요'},{e:'🙂',t:'적당했어요'},{e:'💪',t:'쉬웠어요'}];
+const TESTS = [{k:'pushup',n:'푸시업 최대 (개)'},{k:'squat',n:'1분 스쿼트 (개)'},{k:'plank',n:'플랭크 (초)'}];
 
 /* ---------- 상태 ---------- */
-const KEY = 'women-beginner-4week-v1';
+const KEY = 'bodyweight-4week-v1';
 function todayISO(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function load(){
-  try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.days){s.level='beginner';return s;}}catch(e){}
-  return {level:'beginner',voice:false,music:true,musicVol:50,days:{},tests:{},theme:null};
+  try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.days)return s;}catch(e){}
+  return {level:'normal',voice:false,music:true,musicVol:50,days:{},tests:{},theme:null};
 }
 let state = load();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
@@ -660,6 +646,7 @@ function nextIncomplete(){for(let i=0;i<28;i++)if(!state.days[i])return i;return
 const $ = id=>document.getElementById(id);
 
 function render(){
+  document.querySelectorAll('#levelSeg button').forEach(b=>b.classList.toggle('on',b.dataset.level===state.level));
   $('voiceToggle').checked = !!state.voice;
   $('musicToggle').checked = musicOn();
   $('musicVol').value = state.musicVol??50;
@@ -1117,6 +1104,7 @@ $('toggleDone').onclick=()=>{
   else{state.days[i]={date:todayISO(),sec:planFor(i).total,mood:null,note:''};toast(`DAY ${i+1} 완료! 🎉`);}
   save();render();openSheet(i);
 };
+$('levelSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;state.level=b.dataset.level;save();render();toast(`난이도: ${LEVELS[state.level].label}`);});
 $('voiceToggle').addEventListener('change',e=>{state.voice=e.target.checked;save();loadVoices();if(state.voice)say('음성 안내를 켰어요. 운동하는 동안 옆에서 함께할게요.');});
 function syncMusicBtn(){$('pMusic').classList.toggle('off',!musicOn());$('musicToggle').checked=musicOn();}
 $('musicToggle').addEventListener('change',e=>{state.music=e.target.checked;save();syncMusicBtn();if(P){if(state.music)startMusic();else MUSIC.stop();}});
@@ -1160,7 +1148,7 @@ function applyTheme(){if(state.theme)document.documentElement.setAttribute('data
 
 $('exportBtn').onclick=()=>{
   const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='women-beginner-'+todayISO()+'.json';
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='basic-'+todayISO()+'.json';
   document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 };
 $('resetBtn').onclick=()=>{
