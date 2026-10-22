@@ -108,6 +108,7 @@ input,select,textarea{font:inherit;color:inherit}
 .seg button{border:none;background:transparent;padding:7px 12px;border-radius:9px;font-size:14px;font-weight:500;color:var(--muted)}
 .seg button.on{background:var(--accent);color:#fff}
 .field{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+.field select{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px 8px;max-width:190px}
 .field input{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px 10px}
 
 /* weeks */
@@ -178,7 +179,7 @@ textarea{width:100%;min-height:64px;border:1px solid var(--line);border-radius:1
 .p-top{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;gap:10px}
 .p-progress{height:6px;background:var(--surface-2);margin:0 16px;border-radius:99px;overflow:hidden}
 .p-progress i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s linear}
-.p-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;gap:6px}
+.p-main{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;gap:6px}
 .p-phase{font-weight:900;font-size:14px;letter-spacing:.08em;padding:4px 12px;border-radius:99px;background:var(--accent-soft);color:var(--accent-text)}
 .p-phase.rest{background:var(--rest-soft);color:var(--rest)}
 .p-phase.warm,.p-phase.cool{background:var(--good-soft);color:var(--good)}
@@ -219,6 +220,14 @@ textarea{width:100%;min-height:64px;border:1px solid var(--line);border-radius:1
   .stats{width:100%}
   .days{grid-template-columns:repeat(4,1fr)}
   .grid2{grid-template-columns:1fr}
+}
+@media (max-height:780px){
+  .p-main{gap:2px}
+  .p-timer{width:150px;height:150px;margin:4px 0}
+  .p-timer svg{width:150px;height:150px}
+  .p-timer .t{font-size:44px}
+  .p-fig{height:min(170px,24vh)}
+  .p-controls{padding-top:8px;padding-bottom:calc(14px + env(safe-area-inset-bottom))}
 }
 @media (max-width:420px){
   .days{grid-template-columns:repeat(3,1fr)}
@@ -274,6 +283,7 @@ textarea{width:100%;min-height:64px;border:1px solid var(--line);border-radius:1
       <button data-level="advanced">🚀 고급</button>
     </div>
     <label class="field"><input type="checkbox" id="voiceToggle"> 음성 안내</label>
+    <span class="field" id="voiceBox" hidden><select id="voiceSel" aria-label="목소리 선택"></select><button class="btn ghost" id="voiceTest" style="padding:6px 10px">🔊 들어보기</button></span>
   </div>
 
   <h2 class="section">📅 4주 플랜</h2>
@@ -768,9 +778,67 @@ function beep(freq=880,dur=.12,vol=.15){
     o.start();g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+dur);o.stop(audioCtx.currentTime+dur);
   }catch(e){}
 }
-function say(text){
-  if(!state.voice||!('speechSynthesis' in window))return;
-  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';u.rate=1.05;speechSynthesis.speak(u);}catch(e){}
+/* 음성 안내: 기기에서 가장 자연스러운 한국어 목소리를 고르고, 코치처럼 매번 다른 말로 안내 */
+let voices=[];
+function voiceScore(v){
+  let n=0;
+  if(/natural|neural|online|premium|enhanced/i.test(v.name))n+=4;
+  if(/google/i.test(v.name))n+=2;
+  if(/yuna|sora|sunhi|heami|injoon|jimin|seoyeon/i.test(v.name))n+=1;
+  if(!v.localService)n+=1;
+  return n;
+}
+function loadVoices(){
+  if(!('speechSynthesis' in window))return;
+  voices=speechSynthesis.getVoices().filter(v=>/^ko/i.test(v.lang)).sort((a,b)=>voiceScore(b)-voiceScore(a));
+  const sel=$('voiceSel');
+  sel.innerHTML=voices.map(v=>`<option value="${escapeHtml(v.name)}">${escapeHtml(v.name.replace(/^Microsoft\s+|\s*-\s*Korean.*$|\s*\(Korean.*\)$/gi,''))}</option>`).join('');
+  if(state.voiceName&&voices.some(v=>v.name===state.voiceName))sel.value=state.voiceName;
+  $('voiceBox').hidden=!state.voice||voices.length<2;
+}
+function pickVoice(){return voices.find(v=>v.name===state.voiceName)||voices[0]||null;}
+function speak(text){
+  if(!('speechSynthesis' in window))return;
+  try{
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text),v=pickVoice();
+    if(v)u.voice=v;
+    u.lang=v?v.lang:'ko-KR'; u.rate=0.95; u.pitch=1.08;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+function say(text){if(state.voice)speak(text);}
+const lastPick=new WeakMap();
+function pick(a){ // 같은 말이 연달아 나오지 않게
+  let i=Math.floor(Math.random()*a.length);
+  if(a.length>1&&i===lastPick.get(a))i=(i+1)%a.length;
+  lastPick.set(a,i);return a[i];
+}
+function spoken(n){return n.replace(/\s*\(.*?\)/g,'');}
+function batchim(w){const c=w.charCodeAt(w.length-1);return c>=0xAC00&&c<=0xD7A3&&(c-0xAC00)%28!==0;}
+function eyo(n){n=spoken(n);return n+(batchim(n)?'이에요':'예요');}
+const LINES={
+  ready:[n=>`반가워요! 오늘도 와 줘서 고마워요. 첫 동작은 ${eyo(n)}.`, n=>`우리 오늘도 같이 해 봐요. ${spoken(n)}부터 천천히 시작할게요.`, n=>`준비됐나요? 무리하지 말고, 할 수 있는 만큼만 해요. 첫 동작은 ${eyo(n)}.`],
+  start:['자, 같이 시작해요!','좋아요, 천천히 시작해 볼게요.','시작할게요. 할 수 있어요!'],
+  warm:[n=>`${spoken(n)}. 천천히, 몸이 깨어나는 걸 느껴 보세요.`, n=>`다음은 ${eyo(n)}. 가볍게 풀어 줄게요.`],
+  work:[n=>`${eyo(n)}. 자, 같이 해 봐요!`, n=>`이번엔 ${eyo(n)}. 천천히, 정확하게 해 볼까요?`, n=>`${spoken(n)} 할게요. 힘들면 쉬운 동작으로 해도 괜찮아요.`, n=>`${eyo(n)}. 잘할 수 있어요, 시작!`],
+  last:[n=>`벌써 마지막 동작이에요! ${spoken(n)}, 조금만 더 힘내요. 거의 다 왔어요.`, n=>`마지막이에요! ${spoken(n)}, 여기까지 온 것만으로도 정말 멋져요.`],
+  round:[(n,r)=>`${r}라운드예요. 잘하고 있어요! ${spoken(n)}부터 다시 가 볼게요.`, (n,r)=>`벌써 ${r}라운드! 대단해요. ${spoken(n)}부터 시작할게요.`],
+  rest:[n=>`잘했어요! 잠깐 쉬면서 숨 고르세요. 다음은 ${eyo(n)}.`, n=>`정말 잘하고 있어요. 천천히 숨 쉬고요, 다음은 ${eyo(n)}.`, n=>`수고했어요. 물 한 모금 마셔도 좋아요. 다음은 ${eyo(n)}.`, n=>`멋져요! 조금 쉬었다가 ${spoken(n)} 해 볼게요.`],
+  cool:[n=>`오늘 정말 애썼어요. 이제 천천히 풀어 줄게요. ${eyo(n)}.`, n=>`${spoken(n)}. 숨을 길게 내쉬면서 몸을 편안하게 해 주세요.`],
+  half:['절반 왔어요. 잘하고 있어요!','좋아요, 그 느낌 그대로요.','힘들면 잠깐 쉬어도 괜찮아요. 호흡만 계속해요.','거의 다 왔어요. 조금만 더 같이 버텨 봐요!','지금 정말 잘하고 있어요.'],
+  done:['오늘 운동 끝! 정말 수고 많았어요. 오늘도 해낸 나, 칭찬해 주세요.','다 끝났어요! 꾸준히 하는 당신이 정말 멋져요. 푹 쉬세요.','오늘도 해냈어요! 몸이 고마워할 거예요. 내일 또 만나요.']
+};
+function speakPhase(ph){
+  const n=EX[ph.id].n;
+  if(P.i>0&&P.phases[P.i-1].kind==='ready')return say(pick(LINES.start));
+  if(ph.kind==='work'){
+    const isLast=!P.phases.slice(P.i+1).some(q=>q.kind==='work');
+    const roundStart=ph.round>1&&P.phases.findIndex(q=>q.kind==='work'&&q.round===ph.round)===P.i;
+    if(isLast)return say(pick(LINES.last)(n));
+    if(roundStart)return say(pick(LINES.round)(n,ph.round));
+  }
+  say(pick(LINES[ph.kind])(n));
 }
 let wakeLock=null;
 async function keepAwake(on){
@@ -810,9 +878,7 @@ function showPhase(announce){
   $('pRing').style.stroke = ph.kind==='rest'?'var(--rest)':(ph.kind==='work'||ph.kind==='ready')?'var(--accent)':'var(--good)';
   updateTime();
   if(announce){
-    if(ph.kind==='ready')say('준비하세요. 첫 동작은 '+x.n);
-    else if(ph.kind==='rest')say('휴식. 다음은 '+x.n);
-    else say(x.n);
+    speakPhase(ph);
   }
 }
 function updateTime(){
@@ -831,6 +897,8 @@ function tick(){
   if(P.phases[P.i].kind!=='ready')P.elapsed++;
   if(P.left>0&&P.left<=3)beep(660,.1);
   if(P.left<=0){next(true);return;}
+  const cur=P.phases[P.i];
+  if(cur.kind==='work'&&cur.sec>=30&&P.left===Math.floor(cur.sec/2))say(pick(LINES.half));
   updateTime();
 }
 function next(auto){
@@ -852,7 +920,7 @@ function togglePlay(){
 function finishWorkout(){
   clearInterval(P.timer);P.running=false;
   beep(784,.15);setTimeout(()=>beep(1046,.3),160);
-  say('수고하셨습니다! 오늘 운동 완료');
+  say(pick(LINES.done));
   $('pMain').style.display='none';$('pControls').style.display='none';
   $('finish').classList.add('show');
   $('pBar').style.width='100%';$('pRemain').textContent='0:00';
@@ -884,7 +952,10 @@ $('toggleDone').onclick=()=>{
   save();render();openSheet(i);
 };
 $('levelSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;state.level=b.dataset.level;save();render();toast(`난이도: ${LEVELS[state.level].label}`);});
-$('voiceToggle').addEventListener('change',e=>{state.voice=e.target.checked;save();if(state.voice)say('음성 안내를 켰어요');});
+$('voiceToggle').addEventListener('change',e=>{state.voice=e.target.checked;save();loadVoices();if(state.voice)say('음성 안내를 켰어요. 운동하는 동안 옆에서 함께할게요.');});
+$('voiceSel').addEventListener('change',e=>{state.voiceName=e.target.value;save();speak('안녕하세요. 오늘도 함께 즐겁게 운동해요.');});
+$('voiceTest').onclick=()=>speak(pick(LINES.rest)('스쿼트'));
+if('speechSynthesis' in window){loadVoices();speechSynthesis.addEventListener('voiceschanged',loadVoices);}
 $('testBody').addEventListener('change',e=>{const k=e.target.dataset.test;if(!k)return;state.tests[k]=e.target.value;save();renderTests();});
 
 $('pPlay').onclick=togglePlay;
