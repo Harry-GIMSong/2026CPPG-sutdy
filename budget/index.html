@@ -322,22 +322,6 @@
     .alert-text { flex: 1; text-align: left; font-size: 0.9rem; }
     .alert-x { color: var(--sub); width: 28px; height: 28px; border-radius: 50%; }
 
-    /* 잠금 */
-    .locked .wrap, .locked .tabs, .locked .fab { visibility: hidden; }
-    .lock { position: fixed; inset: 0; z-index: 100; background: var(--bg); display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
-    .lock-box { width: 100%; max-width: 300px; text-align: center; }
-    .lock-title { font-size: 1.15rem; font-weight: 800; }
-    .lock-msg { min-height: 1.4em; font-size: 0.85rem; color: var(--out); margin: 6px 0 10px; }
-    .lock-dots { display: flex; justify-content: center; gap: 14px; margin-bottom: 26px; }
-    .lock-dots i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--primary); }
-    .lock-dots i.on { background: var(--primary); }
-    .lock-dots.shake { animation: shake 0.35s; }
-    @keyframes shake { 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
-    .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
-    .keypad button { height: 62px; border-radius: 18px; background: var(--card); box-shadow: var(--shadow); font-size: 1.4rem; font-weight: 600; }
-    .keypad button:active { background: var(--soft); }
-    .keypad button.ghost { background: none; box-shadow: none; font-size: 1.1rem; }
-
     /* 아래 탭 */
     .tabs {
       position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
@@ -402,10 +386,6 @@
   </style>
 </head>
 <body>
-  <script>
-    // 잠금이 켜져 있으면 내용이 잠깐이라도 보이지 않게 먼저 가립니다
-    try { if (localStorage.getItem("familyBudget.pin")) document.documentElement.classList.add("locked"); } catch (e) { /* 무시 */ }
-  </script>
   <div class="wrap">
     <header class="top">
       <button id="title" class="title" title="눌러서 이름 바꾸기">우리집 가계부</button>
@@ -436,17 +416,6 @@
 
   <div id="sheetBg" class="sheet-bg" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
   <div id="toast" class="toast"></div>
-  <div id="lock" class="lock" hidden>
-    <div class="lock-box">
-      <div class="lock-title" id="lockTitle">🔒 비밀번호</div>
-      <div class="lock-msg" id="lockMsg"></div>
-      <div class="lock-dots" id="lockDots"></div>
-      <div class="keypad" id="keypad">
-      </div>
-      <button class="link" id="lockForgot">비밀번호를 잊었어요</button>
-      <button class="link" id="lockCancel" hidden>취소</button>
-    </div>
-  </div>
   <input type="file" id="fileIn" accept="application/json,.json" hidden />
 
   <script type="module">
@@ -718,9 +687,40 @@
     }
     function unseenIds() { return unseenList().ids; }
 
-    // 카드 실적: 그 달(1일~말일)에 그 카드로 쓴 금액
-    function perfOf(p, k) {
-      return txOf(k).filter(t => t.type !== "in" && t.pay === p.id).reduce((a, t) => a + val(t), 0);
+    /* 카드 실적: 카드마다 정한 실적 기간(매달 perfDay일 ~ 다음 달 perfDay-1일, 1이면 1일~말일)에 쓴 금액 */
+    function addDays(date, n) {
+      const [y, m, d] = date.split("-").map(Number);
+      return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+    }
+
+    function perfPeriod(p, ref) {
+      const day = p.perfDay || 1;
+      const k = mkey(ref);
+      const startK = Number(ref.slice(8)) >= dayIn(k, day) ? k : shiftMonth(k, -1);
+      const nextK = shiftMonth(startK, 1);
+      return [`${startK}-${pad(dayIn(startK, day))}`, addDays(`${nextK}-${pad(dayIn(nextK, day))}`, -1)];
+    }
+
+    function perfOf(p, [from, to]) {
+      return allTx().filter(t => t.type !== "in" && t.pay === p.id && t.date >= from && t.date <= to).reduce((a, t) => a + val(t), 0);
+    }
+
+    function md(date) { return `${Number(date.slice(5, 7))}/${Number(date.slice(8))}`; }
+
+    // 결제 이용기간과 같은 실적 기간 (마감일 다음 날부터)
+    function perfDayFromCut(cutDay) { return cutDay >= 28 ? 1 : cutDay + 1; }
+
+    function perfBox(p) {
+      const ref = cur === mkey(today()) ? today() : `${cur}-${pad(daysIn(cur))}`;
+      const period = perfPeriod(p, ref);
+      const prev = perfPeriod(p, addDays(period[0], -1));
+      const u = perfOf(p, period);
+      const pu = perfOf(p, prev);
+      return `<div class="budget" style="margin-top:12px">
+        <div class="budget-top"><span>🎯 실적 ${md(period[0])}~${md(period[1])} · ${won(u)} / ${won(p.perf)}</span><b>${u >= p.perf ? "달성 ✓" : `${won(p.perf - u)} 남음`}</b></div>
+        <div class="bar"><i style="width:${Math.min(100, (u / p.perf) * 100)}%;background:var(--cardc)"></i></div>
+        <div class="budget-tip">지난 실적 기간 ${md(prev[0])}~${md(prev[1])} · ${won(pu)} · ${pu >= p.perf ? "✓ 달성" : "✗ 미달"}</div>
+      </div>`;
     }
 
     /* ===== 앱 안 알림 ===== */
@@ -732,20 +732,13 @@
       const s = state.settings;
       const now = today();
       const k = mkey(now);
-      const dayN = Number(now.slice(8));
-      const left = daysIn(k) - dayN;
       const out = [];
-      for (const p of creditCards()) {
-        const pk = dayN > dayIn(k, p.payDay) ? shiftMonth(k, 1) : k;
-        const pd = `${pk}-${pad(dayIn(pk, p.payDay))}`;
-        const diff = Math.round((new Date(pd) - new Date(now)) / 864e5);
-        const v = cardBills(pk).filter(e => e.pay === p.id).reduce((a, e) => a + val(e), 0);
-        if (diff <= 3 && v > 0) out.push({ key: `bill:${p.id}:${pd}`, icon: "💳", text: `${p.name} ${won(v)} ${diff ? `${diff}일 뒤(${dayLabel(pd)})` : "오늘"} 결제돼요`, go: "cards" });
-      }
       for (const p of s.payments) {
-        if (!p.perf || left > 7) continue;
-        const u = perfOf(p, k);
-        if (u < p.perf) out.push({ key: `perf:${p.id}:${k}`, icon: "🎯", text: `${p.name} 이번 달 실적까지 ${won(p.perf - u)} 남았어요 (${left}일 남음)`, go: "cards" });
+        if (!p.perf) continue;
+        const period = perfPeriod(p, now);
+        const daysLeft = Math.round((new Date(period[1]) - new Date(now)) / 864e5);
+        const u = perfOf(p, period);
+        if (daysLeft <= 7 && u < p.perf) out.push({ key: `perf:${p.id}:${period[0]}`, icon: "🎯", text: `${p.name} 실적까지 ${won(p.perf - u)} 남았어요 (${md(period[1])}까지 ${daysLeft}일)`, go: "cards" });
       }
       const spent = sums(spendOf(k)).out;
       if (s.monthBudget) {
@@ -1467,16 +1460,7 @@
           const byWho = {};
           for (const e of mine) byWho[e.who] = (byWho[e.who] || 0) + val(e);
           const instN = mine.filter(e => e.instNo).length;
-          let perf = "";
-          if (p.perf) {
-            const u = perfOf(p, cur);
-            const prevU = perfOf(p, shiftMonth(cur, -1));
-            perf = `<div class="budget" style="margin-top:12px">
-              <div class="budget-top"><span>🎯 ${monthName(cur)} 실적 ${won(u)} / ${won(p.perf)}</span><b>${u >= p.perf ? "달성 ✓" : `${won(p.perf - u)} 남음`}</b></div>
-              <div class="bar"><i style="width:${Math.min(100, (u / p.perf) * 100)}%;background:var(--cardc)"></i></div>
-              <div class="budget-tip">지난달 실적 ${won(prevU)} · ${prevU >= p.perf ? "✓ 달성 (이번 달 혜택 대상)" : "✗ 미달"}</div>
-            </div>`;
-          }
+          const perf = p.perf ? perfBox(p) : "";
           html += `<div class="card">
             <div class="bill-head">
               <span class="emo">${esc(p.emoji)}</span>
@@ -1496,10 +1480,8 @@
 
       // 실적만 보는 체크카드
       for (const p of state.settings.payments.filter(x => x.kind === "check" && x.perf)) {
-        const u = perfOf(p, cur);
         html += `<div class="card"><div class="bill-head"><span class="emo">${esc(p.emoji)}</span><span class="cat-main" style="flex:1"><b style="font-size:1rem">${esc(p.name)}</b> <small style="color:var(--sub)">체크카드</small></span></div>
-          <div class="budget" style="margin-top:12px"><div class="budget-top"><span>🎯 ${monthName(cur)} 실적 ${won(u)} / ${won(p.perf)}</span><b>${u >= p.perf ? "달성 ✓" : `${won(p.perf - u)} 남음`}</b></div>
-          <div class="bar"><i style="width:${Math.min(100, (u / p.perf) * 100)}%;background:var(--cardc)"></i></div></div></div>`;
+          ${perfBox(p)}</div>`;
       }
 
       // 결제수단별 (쓴 날 기준)
@@ -1539,7 +1521,7 @@
         <div class="card"><h3>💳 카드·결제수단 <button class="link" data-addpay="credit">＋ 추가</button></h3>
           ${s.payments.map(p => {
             const o = p.owner ? memberOf(p.owner) : null;
-            const info = (p.kind === "credit" ? `매달 ${p.payDay}일 결제 · ${p.cutDay >= 31 ? "말일" : `${p.cutDay}일`} 마감` : PAY_KINDS[p.kind]) + (p.perf ? ` · 실적 ${shortWon(p.perf)}` : "");
+            const info = (p.kind === "credit" ? `매달 ${p.payDay}일 결제 · ${p.cutDay >= 31 ? "말일" : `${p.cutDay}일`} 마감` : PAY_KINDS[p.kind]) + (p.perf ? ` · 실적 ${shortWon(p.perf)}(${(p.perfDay || 1) === 1 ? "1일~말일" : `${p.perfDay}일~`})` : "");
             return `<button class="set-row" data-editpay="${esc(p.id)}"><span style="color:var(--text)">${esc(p.emoji)} ${esc(p.name)}${o ? ` <small style="color:var(--sub)">${esc(o.name)}</small>` : ""}</span><span>${info} ›</span></button>`;
           }).join("")}
           <div class="sub-h">홈·통계에서 신용카드 지출을 언제 쓴 돈으로 볼까요?</div>
@@ -1579,13 +1561,6 @@
 
         <div class="card"><h3>구성원</h3>
           <div class="chips">${s.members.map(m => `<button class="chip" data-editmember="${esc(m.id)}">${esc(m.emoji)} ${esc(m.name)}</button>`).join("")}<button class="chip add" id="addMember">＋ 추가</button></div>
-        </div>
-
-        <div class="card"><h3>🔒 앱 잠금 <small>이 휴대폰만</small></h3>
-          <p class="note">앱을 열 때와 1분 넘게 다른 앱을 보다 돌아올 때 비밀번호 4자리를 물어봐요. 휴대폰을 다른 사람이 볼 때 가리는 용도예요.</p>
-          ${storageGet(PIN_KEY)
-            ? `<div class="btn-row"><button class="btn" id="pinChange">비밀번호 바꾸기</button><button class="btn" id="pinOff">잠금 끄기</button></div>`
-            : `<button class="btn primary" id="pinOn" style="width:100%">비밀번호 정하기</button>`}
         </div>
 
         <div class="card"><h3>데이터</h3>
@@ -2006,6 +1981,9 @@
         <div id="pPerfWrap">
           <label class="lbl" for="pPerf">전월실적 기준 (혜택 받으려면 한 달에 얼마 써야 하나요? 없으면 비워 두기)</label>
           <input class="field" id="pPerf" inputmode="numeric" placeholder="예: 300,000" />
+          <label class="lbl" for="pPerfDay">실적 기간 (카드사에서 실적을 세는 기간)</label>
+          <select class="field" id="pPerfDay"><option value="1">매달 1일 ~ 말일</option>${Array.from({ length: 27 }, (_, i) => `<option value="${i + 2}">매달 ${i + 2}일 ~ 다음 달 ${i + 1}일</option>`).join("")}</select>
+          <div class="pay-note" id="pPerfNote"></div>
         </div>
         <div class="sheet-actions">${old ? `<button class="btn danger" id="pDel">삭제</button>` : ""}<button class="btn primary" id="pSave">저장</button></div>`);
       $("pName").value = d.name;
@@ -2013,6 +1991,9 @@
       $("pPay").value = d.payDay || 14;
       $("pCut").value = String(d.cutDay || 31);
       $("pPerf").value = d.perf ? d.perf.toLocaleString("ko-KR") : "";
+      let perfTouched = !!(old && old.perfDay);
+      $("pPerfDay").value = String(d.perfDay || 1);
+      $("pPerfDay").onchange = () => { perfTouched = true; paint(); };
       $("pPerf").oninput = () => { const v = digits($("pPerf").value); $("pPerf").value = v ? v.toLocaleString("ko-KR") : ""; };
       bindEmoji($("pEmoji"));
       const paint = () => {
@@ -2021,6 +2002,10 @@
           .map(m => `<button class="chip ${m.id === (d.owner || "") ? "on" : ""}" data-v="${esc(m.id)}">${esc(m.emoji)} ${esc(m.name)}</button>`).join("");
         $("pCredit").hidden = d.kind !== "credit";
         $("pPerfWrap").hidden = d.kind === "cash";
+        // 실적 기간은 따로 고르기 전까지 결제 이용기간(신용카드)이나 1일~말일(체크카드)을 따라갑니다
+        if (!perfTouched) $("pPerfDay").value = String(d.kind === "credit" ? perfDayFromCut(Number($("pCut").value)) : 1);
+        const pp = perfPeriod({ perfDay: Number($("pPerfDay").value) }, today());
+        $("pPerfNote").innerHTML = `지금 실적 기간: <b>${md(pp[0])} ~ ${md(pp[1])}</b><br><small>카드사 앱의 “전월실적 기준 기간”을 확인해 맞춰 주세요. 신용카드는 보통 결제 이용기간과 같아요.</small>`;
         const p = { payDay: Math.min(31, Math.max(1, Number($("pPay").value) || 1)), cutDay: Number($("pCut").value) };
         const k = mkey(today());
         const [from, to] = usePeriod(p, k);
@@ -2052,7 +2037,10 @@
         const name = $("pName").value.trim();
         if (!name) return toast("이름을 넣어 주세요");
         const p = { id: old ? old.id : uid(), name, emoji: $("pEmoji").value.trim() || "💳", kind: d.kind, owner: d.owner || "" };
-        if (d.kind !== "cash" && digits($("pPerf").value)) p.perf = digits($("pPerf").value);
+        if (d.kind !== "cash" && digits($("pPerf").value)) {
+          p.perf = digits($("pPerf").value);
+          p.perfDay = Number($("pPerfDay").value) || 1;
+        }
         if (d.kind === "credit") {
           p.payDay = Math.min(31, Math.max(1, Number($("pPay").value) || 1));
           p.cutDay = Number($("pCut").value) || 31;
@@ -2448,116 +2436,12 @@
       if (e.target.id === "fltQ") { filter.q = e.target.value; renderListBody(); }
     });
 
-    /* ===== 앱 잠금 ===== */
-    const PIN_KEY = "familyBudget.pin";
-    const lock = { mode: "", buf: "", first: "", done: null };
-
-    async function pinHash(pin) {
-      const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`familyBudget:${pin}`));
-      return Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2, "0")).join("");
-    }
-
-    $("keypad").innerHTML = [..."123456789"].map(n => `<button data-k="${n}">${n}</button>`).join("")
-      + `<button class="ghost" data-k="" aria-hidden="true" tabindex="-1"></button><button data-k="0">0</button><button class="ghost" data-k="del" aria-label="지우기">⌫</button>`;
-
-    function paintLock(msg) {
-      const titles = { unlock: "🔒 비밀번호를 입력하세요", verify: "지금 비밀번호를 입력하세요", set: lock.first ? "한 번 더 입력하세요" : "새 비밀번호 4자리" };
-      $("lockTitle").textContent = titles[lock.mode];
-      $("lockMsg").textContent = msg || "";
-      $("lockDots").innerHTML = [0, 1, 2, 3].map(i => `<i class="${i < lock.buf.length ? "on" : ""}"></i>`).join("");
-      $("lockForgot").hidden = lock.mode !== "unlock";
-      $("lockCancel").hidden = lock.mode === "unlock";
-    }
-
-    function showLock(mode, done) {
-      Object.assign(lock, { mode, buf: "", first: "", done });
-      $("lock").hidden = false;
-      paintLock();
-    }
-
-    function hideLock() {
-      $("lock").hidden = true;
-      document.documentElement.classList.remove("locked");
-    }
-
-    function wrongPin(msg) {
-      lock.buf = "";
-      paintLock(msg);
-      $("lockDots").classList.remove("shake");
-      void $("lockDots").offsetWidth;
-      $("lockDots").classList.add("shake");
-    }
-
-    async function pinFull() {
-      const h = await pinHash(lock.buf);
-      if (lock.mode === "set") {
-        if (!lock.first) {
-          lock.first = h;
-          lock.buf = "";
-          return paintLock();
-        }
-        if (lock.first !== h) {
-          lock.first = "";
-          return wrongPin("두 번 입력한 비밀번호가 달라요. 처음부터 다시 입력하세요");
-        }
-        storageSet(PIN_KEY, h);
-      } else if (h !== storageGet(PIN_KEY)) {
-        return wrongPin("비밀번호가 틀렸어요");
-      }
-      hideLock();
-      if (lock.done) lock.done();
-    }
-
-    $("keypad").onclick = e => {
-      const b = e.target.closest("button");
-      if (!b || !b.dataset.k || lock.buf.length >= 4 && b.dataset.k !== "del") return;
-      lock.buf = b.dataset.k === "del" ? lock.buf.slice(0, -1) : lock.buf + b.dataset.k;
-      paintLock();
-      if (lock.buf.length === 4) setTimeout(pinFull, 120);
-    };
-    document.addEventListener("keydown", e => {
-      if ($("lock").hidden) return;
-      if (/^[0-9]$/.test(e.key) && lock.buf.length < 4) {
-        lock.buf += e.key;
-        paintLock();
-        if (lock.buf.length === 4) setTimeout(pinFull, 120);
-      } else if (e.key === "Backspace") {
-        lock.buf = lock.buf.slice(0, -1);
-        paintLock();
-      }
-    });
-    $("lockCancel").onclick = hideLock;
-    $("lockForgot").onclick = () => {
-      if (!confirm("비밀번호를 지우려면 이 휴대폰에 저장된 가계부 기록도 지워야 해요.\n함께 쓰는 가계부는 서버에 남아 있어서 다시 연결되면 돌아와요. 지울까요?")) return;
-      try {
-        for (const k of Object.keys(localStorage)) if (k.startsWith("familyBudget") && k !== ROOM_KEY) localStorage.removeItem(k);
-      } catch (e) { /* 무시 */ }
-      location.reload();
-    };
-
-    let hiddenAt = 0;
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) hiddenAt = Date.now();
-      else if (storageGet(PIN_KEY) && hiddenAt && Date.now() - hiddenAt > 60000 && $("lock").hidden) {
-        closeSheet();
-        showLock("unlock");
-      }
-    });
-
-    document.addEventListener("click", e => {
-      const id = e.target.closest("button") && e.target.closest("button").id;
-      if (id === "pinOn") showLock("set", () => { render(); toast("🔒 잠금을 켰어요"); });
-      if (id === "pinChange") showLock("verify", () => showLock("set", () => { render(); toast("비밀번호를 바꿨어요"); }));
-      if (id === "pinOff") showLock("verify", () => { storageSet(PIN_KEY, null); render(); toast("잠금을 껐어요"); });
-    });
-
     window.addEventListener("online", () => setShareStatus(remote.status));
     window.addEventListener("offline", () => setShareStatus(remote.status));
     if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
       navigator.serviceWorker.register("sw.js").catch(() => { /* 오프라인 실행만 안 될 뿐 */ });
     }
 
-    if (storageGet(PIN_KEY)) showLock("unlock");
     seenAt();
     render();
     setShareStatus(room ? "wait" : "off");
