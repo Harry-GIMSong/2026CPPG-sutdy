@@ -394,7 +394,7 @@
     const ME_KEY = "familyBudget.me";
     const DEFAULT_TITLE = "우리집 가계부";
     const COLORS = ["#22c55e", "#f97316", "#3b82f6", "#eab308", "#ec4899", "#8b5cf6", "#14b8a6", "#ef4444", "#64748b", "#84cc16", "#06b6d4", "#f43f5e", "#a16207"];
-    const EMOJIS = ["🍚", "🛒", "☕", "🍕", "🍺", "🧴", "🏠", "💡", "📱", "🚗", "⛽", "🚌", "👶", "🧸", "📚", "💊", "🏥", "👕", "💇", "🎡", "✈️", "🎬", "🎁", "💝", "🐶", "🏋️", "💳", "🏦", "📦", "💰", "💵", "🎉", "➕", "🧔", "👩", "👨‍👩‍👧", "👦", "👧", "👵", "👴"];
+    const EMOJIS = ["🍚", "🛒", "☕", "🍕", "🍺", "🧴", "🏠", "💡", "📱", "🚗", "⛽", "🚌", "👶", "🧸", "📚", "💊", "🏥", "🛡️", "👕", "💇", "🎡", "✈️", "🎬", "🎁", "💝", "🐶", "🐱", "🏋️", "💳", "🏦", "📦", "💰", "💵", "🎉", "➕", "🧔", "👩", "👨‍👩‍👧", "👦", "👧", "👵", "👴"];
 
     const cat = (id, name, emoji, type) => ({ id, name, emoji, type, budget: 0 });
     function emptySettings() {
@@ -414,10 +414,13 @@
           cat("phone", "통신·구독", "📱", "out"),
           cat("car", "교통·차량", "🚗", "out"),
           cat("kid", "육아·교육", "👶", "out"),
+          cat("pet", "반려동물", "🐱", "out"),
           cat("health", "병원·약", "💊", "out"),
+          cat("insure", "보험", "🛡️", "out"),
           cat("shop", "쇼핑·미용", "👕", "out"),
           cat("fun", "여가·여행", "🎡", "out"),
           cat("gift", "경조사·선물", "🎁", "out"),
+          cat("saving", "저축·투자", "🏦", "out"),
           cat("etc", "기타", "📦", "out"),
           cat("salary", "월급", "💰", "in"),
           cat("side", "부수입", "💵", "in"),
@@ -426,8 +429,28 @@
         ],
         monthBudget: 0,
         fixed: [],
-        fixedDone: {}
+        fixedDone: {},
+        catsVersion: CATS_VERSION
       };
+    }
+
+    // 나중에 기본 분류에 더한 것들. 예전에 만든 가계부에도 한 번만 넣어 줍니다 (비슷한 이름이 이미 있으면 건너뜀)
+    const CATS_VERSION = 2;
+    const NEW_CATS = [
+      { c: cat("pet", "반려동물", "🐱", "out"), like: ["반려", "고양이", "냥"], after: "kid" },
+      { c: cat("insure", "보험", "🛡️", "out"), like: ["보험"], after: "health" },
+      { c: cat("saving", "저축·투자", "🏦", "out"), like: ["저축"] }
+    ];
+
+    function withNewCats(cats) {
+      cats = cats.slice();
+      for (const { c, like, after } of NEW_CATS) {
+        if (cats.some(x => x.id === c.id || (x.type === c.type && like.some(w => x.name.includes(w))))) continue;
+        const prev = cats.findIndex(x => x.id === after);
+        const etc = cats.findIndex(x => x.id === "etc");
+        cats.splice(prev >= 0 ? prev + 1 : etc >= 0 ? etc : cats.filter(x => x.type === "out").length, 0, { ...c });
+      }
+      return cats;
     }
 
     function normSettings(d) {
@@ -436,10 +459,13 @@
       return {
         title: d.title || e.title,
         members: Array.isArray(d.members) && d.members.length ? d.members : e.members,
-        cats: Array.isArray(d.cats) && d.cats.some(c => c.type === "out") && d.cats.some(c => c.type === "in") ? d.cats : e.cats,
+        cats: Array.isArray(d.cats) && d.cats.some(c => c.type === "out") && d.cats.some(c => c.type === "in")
+          ? ((Number(d.catsVersion) || 1) < CATS_VERSION ? withNewCats(d.cats) : d.cats)
+          : e.cats,
         monthBudget: Number(d.monthBudget) || 0,
         fixed: Array.isArray(d.fixed) ? d.fixed : [],
-        fixedDone: d.fixedDone && typeof d.fixedDone === "object" ? d.fixedDone : {}
+        fixedDone: d.fixedDone && typeof d.fixedDone === "object" ? d.fixedDone : {},
+        catsVersion: CATS_VERSION
       };
     }
 
@@ -1482,7 +1508,11 @@
             setShareStatus("missing");
             return;
           }
-          state.settings = normSettings(snap.data());
+          const raw = snap.data();
+          state.settings = normSettings(raw);
+          if ((Number(raw.catsVersion) || 1) < CATS_VERSION) {
+            fs.setDoc(remote.settingsRef, { cats: state.settings.cats, catsVersion: CATS_VERSION }, { merge: true }).catch(onRemoteError);
+          }
           save();
           render();
           setShareStatus("live");
