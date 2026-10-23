@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>린넨베이지 드립 타이머</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=Martian+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one-screen brew console. Timer + target grams stay pinned at top; schedule and settings below. */
+:root {
+  --bg: #eef0ec;        /* cool linen */
+  --surface: #f8f9f6;
+  --line: #d3d6cf;
+  --fg: #2a211c;        /* espresso */
+  --muted: #6d6660;
+  --accent: #d9604a;    /* pomelo flesh */
+  --accent-soft: #f6dcd4;
+  --ok: #3f7d5a;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-num: "Martian Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #171412; --surface: #211c19; --line: #3a322d; --fg: #efe8e2; --muted: #a59b93;
+    --accent: #f07c64; --accent-soft: #3d2620; --ok: #7cc49a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #171412; --surface: #211c19; --line: #3a322d; --fg: #efe8e2; --muted: #a59b93;
+  --accent: #f07c64; --accent-soft: #3d2620; --ok: #7cc49a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+}
+.wrap {
+  max-width: 560px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 16px 40px;
+  display: flex; flex-direction: column; gap: 18px;
+}
+header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+h1 { margin: 0; font-size: 1.15rem; font-weight: 700; text-wrap: balance; }
+.meta { color: var(--muted); font-size: .8rem; letter-spacing: .02em; }
+.eyebrow { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+
+/* Console (sticky) */
+.console {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
+  padding: 18px 18px 16px; display: flex; flex-direction: column; gap: 14px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.readout { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.big { font-size: clamp(2.6rem, 13vw, 3.8rem); font-weight: 600; line-height: 1; letter-spacing: -.03em; }
+.big small { font-size: .38em; font-weight: 400; color: var(--muted); margin-left: 4px; letter-spacing: 0; }
+#water { color: var(--accent); }
+.status {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  padding-top: 12px; border-top: 1px solid var(--line);
+}
+.phase { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.pill {
+  font-size: .72rem; font-weight: 500; padding: 3px 9px; border-radius: 999px;
+  background: var(--accent-soft); color: var(--accent);
+}
+.pill.wait { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+.pill.done { background: transparent; color: var(--ok); border: 1px solid var(--ok); }
+.next { color: var(--muted); font-size: .85rem; }
+.guide { font-size: .85rem; color: var(--muted); }
+.guide b { color: var(--fg); }
+.count { font-size: 1.6rem; font-weight: 600; color: var(--accent); margin-right: 6px; }
+.howto { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 6px; font-size: .88rem; color: var(--muted); }
+.howto b { color: var(--fg); font-weight: 500; }
+.bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.bar > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s linear; }
+.controls { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
+button {
+  font: inherit; font-weight: 700; border-radius: 12px; padding: 14px 10px; cursor: pointer;
+  border: 1px solid var(--line); background: transparent; color: var(--fg);
+}
+button.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); font-size: 1.05rem; }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* Schedule */
+section h2 { margin: 0 0 8px; font-size: .95rem; }
+.steps { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.steps li {
+  display: grid; grid-template-columns: 4.2rem 1fr auto; gap: 10px; align-items: baseline;
+  padding: 10px 4px; border-bottom: 1px solid var(--line); color: var(--muted);
+}
+.steps li .t { font-size: .85rem; }
+.steps li .w { font-size: .9rem; }
+.steps li.active { color: var(--fg); background: var(--accent-soft); }
+.steps li.active .w { color: var(--accent); font-weight: 600; }
+.steps li.past { opacity: .55; }
+.steps li .n { font-weight: 500; }
+.steps li .n span { display: block; font-size: .78rem; font-weight: 400; }
+
+/* Settings */
+.settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field label { font-size: .75rem; color: var(--muted); }
+.field input {
+  font: 500 1rem var(--font-num); width: 100%; padding: 10px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--fg);
+}
+.notes { font-size: .85rem; color: var(--muted); margin: 0; }
+.notes b { color: var(--fg); font-weight: 500; }
+.toggles { display: flex; gap: 16px; flex-wrap: wrap; font-size: .85rem; color: var(--muted); }
+.toggles label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+
+.flash { animation: flash .6s ease-out; }
+@keyframes flash { from { box-shadow: 0 0 0 4px var(--accent); } to { box-shadow: 0 0 0 0 transparent; } }
+@media (prefers-reduced-motion: reduce) { .flash { animation: none; } .bar > i { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>포멜로빈 린넨베이지</h1>
+    <span class="meta">하리오 분쇄 · 저울 없이 시간으로 붓기</span>
+  </header>
+
+  <div class="console" id="console">
+    <div class="readouts">
+      <div class="readout">
+        <span class="eyebrow">경과 시간</span>
+        <span class="big num" id="time">0:00</span>
+      </div>
+      <div class="readout">
+        <span class="eyebrow">이번에 부을 양</span>
+        <span class="big num" id="water">0<small>ml</small></span>
+      </div>
+    </div>
+    <div class="bar" aria-hidden="true"><i id="bar"></i></div>
+    <div class="status">
+      <div class="phase"><span id="phase">준비</span><span class="pill wait" id="pill">대기</span></div>
+      <span class="next num" id="next">시작을 누르세요</span>
+    </div>
+    <div class="guide" id="guide">물을 붓기 시작할 때 시작을 누르세요.</div>
+    <div class="controls">
+      <button class="primary" id="startBtn" type="button">시작</button>
+      <button id="resetBtn" type="button">리셋</button>
+    </div>
+  </div>
+
+  <section>
+    <h2>푸어 스케줄</h2>
+    <ol class="steps" id="steps"></ol>
+  </section>
+
+  <section>
+    <h2>저울 없이 내리는 법</h2>
+    <ol class="howto">
+      <li><b>물을 미리 정확히 재기.</b> 끓인 물을 계량컵으로 <b class="num" id="totalHow">300 ml</b>만 재서 드립포트에 담으세요. 마지막 푸어는 남은 물을 전부 부으면 되니 총량이 저절로 맞습니다.</li>
+      <li><b>붓는 속도 한 번 재기.</b> 계량컵이나 서버에 5초 동안 평소처럼 붓고 눈금을 읽어 5로 나누세요. 그 값을 아래 붓는 속도 칸에 넣으면 단계별 붓는 시간이 바뀝니다.</li>
+      <li><b>시간으로 붓기.</b> 화면의 초가 줄어드는 동안만 붓고, 0이 되면 멈추세요.</li>
+      <li><b>서버 눈금으로 확인.</b> 다 내리면 서버에 약 <b class="num" id="yieldHow">260 ml</b>가 모입니다 (원두가 물을 2배쯤 머금음).</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>레시피</h2>
+    <div class="settings">
+      <div class="field"><label for="dose">원두 (g)</label><input id="dose" type="number" inputmode="decimal" min="8" max="40" step="0.5" value="20"></div>
+      <div class="field"><label for="ratio">비율 1 :</label><input id="ratio" type="number" inputmode="decimal" min="10" max="20" step="0.5" value="15"></div>
+      <div class="field"><label for="temp">물 온도 (°C)</label><input id="temp" type="number" inputmode="numeric" min="80" max="100" step="1" value="92"></div>
+      <div class="field"><label for="rate">붓는 속도 (ml/초)</label><input id="rate" type="number" inputmode="decimal" min="2" max="10" step="0.5" value="5"></div>
+    </div>
+    <p class="notes" style="margin-top:10px">총 물 <b class="num" id="total">300 ml</b> · 원두 20g ≈ 하리오 계량스푼 평평하게 2스푼 · 분쇄도 <b>중간-가늘게</b> (굵은 설탕 정도)</p>
+    <p class="notes" style="margin-top:6px">커핑 차트상 단맛·여운·바디가 높고 산미는 낮은 편이라, 92°C 전후와 1:15 비율로 단맛과 질감을 살리는 쪽에 맞췄습니다. 쓰면 온도를 1–2°C 낮추거나 조금 굵게, 밍밍하면 1:14로 진하게 조정하세요.</p>
+    <div class="toggles" style="margin-top:10px">
+      <label><input type="checkbox" id="sound" checked> 단계 알림음</label>
+      <label><input type="checkbox" id="awake" checked> 화면 꺼짐 방지</label>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  // Each step: start time (s) and cumulative target as fraction of total water
+  // (bloom uses 2.2x dose instead). Last entry marks the expected finish.
+  const PLAN = [
+    { name: '뜸들이기', hint: '원을 그리며 가루 전체를 적시기', at: 0,   bloom: true },
+    { name: '1차 푸어', hint: '중심에서 바깥으로 천천히',       at: 40,  frac: 0.40 },
+    { name: '2차 푸어', hint: '같은 속도로 원 그리기',           at: 75,  frac: 0.70 },
+    { name: '3차 푸어', hint: '중심 위주로 마무리',              at: 110, frac: 1.00 },
+    { name: '드로우다운', hint: '물이 다 빠질 때까지 기다리기',   at: 135, hold: true },
+    { name: '완료', hint: '서버를 저어 맛을 고르게',            at: 180, done: true },
+  ];
+
+  let elapsed = 0, startedAt = null, raf = null, lastIdx = -1, lastBeepSec = -1, lastStop = -1;
+  let audio = null, wakeLock = null;
+
+  const fmt = s => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+  const recipe = () => {
+    const dose = Math.min(40, Math.max(8, parseFloat($('dose').value) || 20));
+    const ratio = Math.min(20, Math.max(10, parseFloat($('ratio').value) || 15));
+    const rate = Math.min(10, Math.max(2, parseFloat($('rate').value) || 5));
+    return { dose, rate, total: Math.round(dose * ratio) };
+  };
+  const targets = () => {
+    const { dose, rate, total } = recipe();
+    let prev = 0;
+    return PLAN.map((st, i) => {
+      let w = prev;
+      if (st.bloom) w = Math.round(dose * 2.2);
+      else if (st.frac) w = Math.max(prev, Math.round(total * st.frac));
+      const from = prev; prev = w;
+      // Pour time comes from amount / rate, leaving at least 5s before the next step.
+      const gap = PLAN[i + 1] ? PLAN[i + 1].at - st.at - 5 : 0;
+      const pour = w > from ? Math.max(3, Math.min(gap, Math.round((w - from) / rate))) : 0;
+      return { ...st, from, to: w, pour };
+    });
+  };
+
+  function renderSteps() {
+    const list = targets();
+    const { dose, total } = recipe();
+    $('total').textContent = $('totalHow').textContent = total + ' ml';
+    $('yieldHow').textContent = Math.round((total - dose * 2) / 10) * 10 + ' ml';
+    $('steps').innerHTML = list.map((st, i) => `
+      <li data-i="${i}">
+        <span class="t num">${fmt(st.at)}</span>
+        <span class="n">${st.name}<span>${st.hint}</span></span>
+        <span class="w num">${st.hold || st.done ? '—' : (st.done ? '' : (i === 3 ? '남은 물 전부' : '+' + (st.to - st.from) + ' ml')) + '<br><small>' + st.pour + '초 · 누적 ' + st.to + '</small>'}</span>
+      </li>`).join('');
+    lastIdx = -1;
+    update();
+  }
+
+  function stepIndex(t) {
+    let idx = 0;
+    PLAN.forEach((st, i) => { if (t >= st.at) idx = i; });
+    return idx;
+  }
+
+  function beep(freq = 880, dur = 0.15) {
+    if (!$('sound').checked || !audio) return;
+    try {
+      const o = audio.createOscillator(), g = audio.createGain();
+      o.frequency.value = freq; o.connect(g); g.connect(audio.destination);
+      g.gain.setValueAtTime(0.25, audio.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + dur);
+      o.start(); o.stop(audio.currentTime + dur);
+    } catch (e) {}
+  }
+
+  function update() {
+    const t = startedAt != null ? elapsed + (performance.now() - startedAt) / 1000 : elapsed;
+    const list = targets();
+    const i = stepIndex(t);
+    const st = list[i];
+    const nxt = list[i + 1];
+    const into = t - st.at;
+    const pouring = startedAt != null || elapsed > 0 ? (st.pour > 0 && into < st.pour) : false;
+    const running = startedAt != null || elapsed > 0;
+
+    $('time').textContent = fmt(t);
+    const cur = running ? st : list[0];
+    $('water').innerHTML = (cur.hold || cur.done ? 0 : cur.to - cur.from) + '<small>ml</small>';
+    $('bar').style.width = Math.min(100, t / PLAN[PLAN.length - 1].at * 100) + '%';
+
+    const pill = $('pill');
+    if (!running) {
+      $('phase').textContent = '준비';
+      pill.textContent = '대기'; pill.className = 'pill wait';
+      $('next').textContent = `뜸들이기 ${list[0].pour}초 붓기`;
+      $('guide').textContent = '물을 붓기 시작하는 순간 시작을 누르세요.';
+    } else if (st.done) {
+      $('phase').textContent = '추출 완료';
+      pill.textContent = '완료'; pill.className = 'pill done';
+      $('next').textContent = '서버 약 ' + $('yieldHow').textContent;
+      $('guide').textContent = '드리퍼를 내리고 서버를 한 번 저어주세요.';
+    } else {
+      $('phase').textContent = st.name;
+      if (pouring) {
+        pill.textContent = '붓는 중'; pill.className = 'pill';
+        $('guide').innerHTML = `<span class="count num">${Math.ceil(st.pour - into)}</span>초 동안 계속 붓기 · ${i === 3 ? '남은 물을 전부' : st.hint}`;
+      } else {
+        pill.textContent = st.hold ? '대기' : '멈추기'; pill.className = 'pill wait';
+        $('guide').textContent = st.hold ? st.hint : '붓기를 멈추고 다음 단계까지 기다리세요.';
+      }
+      if (nxt) $('next').textContent = `${nxt.name} ${nxt.done || nxt.hold ? '' : nxt.pour + '초 '}· ${fmt(nxt.at - t)} 후`;
+    }
+
+    if (running && startedAt != null && nxt) {
+      const left = Math.ceil(nxt.at - t);
+      if (left <= 3 && left >= 1 && left !== lastBeepSec) { lastBeepSec = left; beep(660, 0.08); }
+    }
+    // Signal the end of each timed pour so you know to stop without looking.
+    if (running && startedAt != null && st.pour > 0 && into >= st.pour && into < st.pour + 0.5 && lastStop !== i) { lastStop = i; beep(440, 0.3); }
+    if (i !== lastIdx) {
+      if (lastIdx !== -1 && startedAt != null) {
+        beep(st.done ? 520 : 990, st.done ? 0.5 : 0.2);
+        const c = $('console'); c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash');
+      }
+      lastIdx = i;
+      document.querySelectorAll('#steps li').forEach(li => {
+        const k = +li.dataset.i;
+        li.className = running && k === i ? 'active' : running && k < i ? 'past' : '';
+      });
+    }
+    if (startedAt != null) raf = requestAnimationFrame(update);
+  }
+
+  async function keepAwake(on) {
+    try {
+      if (on && $('awake').checked && 'wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+      else if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
+    } catch (e) { wakeLock = null; }
+  }
+
+  function toggle() {
+    if (!audio) { try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+    if (audio && audio.state === 'suspended') audio.resume();
+    if (startedAt == null) {
+      startedAt = performance.now();
+      $('startBtn').textContent = '일시정지';
+      keepAwake(true);
+      lastIdx = -1;
+      update();
+    } else {
+      elapsed += (performance.now() - startedAt) / 1000;
+      startedAt = null;
+      cancelAnimationFrame(raf);
+      $('startBtn').textContent = '계속';
+      keepAwake(false);
+      update();
+    }
+  }
+
+  function reset() {
+    cancelAnimationFrame(raf);
+    startedAt = null; elapsed = 0; lastIdx = -1; lastBeepSec = -1; lastStop = -1;
+    $('startBtn').textContent = '시작';
+    keepAwake(false);
+    update();
+  }
+
+  $('startBtn').addEventListener('click', toggle);
+  $('resetBtn').addEventListener('click', reset);
+  ['dose', 'ratio', 'rate'].forEach(id => $(id).addEventListener('input', renderSteps));
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT') return;
+    if (e.code === 'Space') { e.preventDefault(); toggle(); }
+    if (e.key === 'r' || e.key === 'R') reset();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && startedAt != null) keepAwake(true);
+  });
+
+  renderSteps();
+})();
+</script>
+</body>
+</html>
