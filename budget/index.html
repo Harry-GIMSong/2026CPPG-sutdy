@@ -314,6 +314,14 @@
     .pay-note { background: var(--soft); border-radius: 12px; padding: 10px 12px; font-size: 0.82rem; line-height: 1.6; margin-top: 12px; }
     .cardpay { display: flex; justify-content: space-between; gap: 8px; width: 100%; text-align: left; padding: 10px 12px; margin-bottom: 8px; border-radius: 12px; background: var(--soft); color: var(--cardc); font-weight: 600; font-size: 0.88rem; }
 
+    .new-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--out); margin-right: 6px; vertical-align: middle; }
+    .alerts { padding: 8px 14px; }
+    .alert-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+    .alert-row + .alert-row { border-top: 1px solid var(--line); }
+    .alert-icon { font-size: 1.1rem; }
+    .alert-text { flex: 1; text-align: left; font-size: 0.9rem; }
+    .alert-x { color: var(--sub); width: 28px; height: 28px; border-radius: 50%; }
+
     /* 아래 탭 */
     .tabs {
       position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
@@ -416,6 +424,7 @@
     const ROOM_KEY = "familyBudget.room";
     const ME_KEY = "familyBudget.me";
     const PAY_KEY = "familyBudget.lastPay";
+    const DISMISS_KEY = "familyBudget.dismissed";
     const DEFAULT_TITLE = "우리집 가계부";
     const COLORS = ["#22c55e", "#f97316", "#3b82f6", "#eab308", "#ec4899", "#8b5cf6", "#14b8a6", "#ef4444", "#64748b", "#84cc16", "#06b6d4", "#f43f5e", "#a16207"];
     const EMOJIS = ["🍚", "🛒", "☕", "🍕", "🍺", "🧴", "🏠", "💡", "📱", "🚗", "⛽", "🚌", "👶", "🧸", "📚", "💊", "🏥", "🛡️", "👕", "💇", "🎡", "✈️", "🎬", "🎁", "💝", "🐶", "🐱", "🏋️", "💳", "🟦", "🟥", "🟩", "🟨", "⬛", "🏦", "📦", "💰", "💵", "🎉", "➕", "🧔", "👩", "👨‍👩‍👧", "👦", "👧", "👵", "👴"];
@@ -455,6 +464,7 @@
         basis: "bill",
         monthBudget: 0,
         fixed: [],
+        favs: [],
         fixedDone: {},
         catsVersion: CATS_VERSION
       };
@@ -492,6 +502,7 @@
         basis: d.basis === "use" ? "use" : "bill",
         monthBudget: Number(d.monthBudget) || 0,
         fixed: Array.isArray(d.fixed) ? d.fixed : [],
+        favs: Array.isArray(d.favs) ? d.favs : [],
         fixedDone: d.fixedDone && typeof d.fixedDone === "object" ? d.fixedDone : {},
         catsVersion: CATS_VERSION
       };
@@ -542,7 +553,7 @@
     let tab = "home";
     let statsMode = "month";
     let cur = mkey(today());
-    const filter = { type: "all", who: "", cat: "", pay: "", q: "", pay: "", day: 0 };
+    const filter = { type: "all", who: "", cat: "", pay: "", tag: "", q: "", day: 0 };
 
     /* ===== 작은 도우미 ===== */
     const $ = id => document.getElementById(id);
@@ -651,6 +662,98 @@
       });
     }
 
+    /* ===== 새로 적힌 기록 =====
+       상대가 이 휴대폰에서 마지막으로 확인한 뒤에 적거나 고친 기록을 표시합니다. */
+    const seenKey = () => `familyBudget.seen:${room || "local"}`;
+    function seenAt() {
+      let v = Number(storageGet(seenKey()));
+      if (!v) {
+        v = Date.now();
+        storageSet(seenKey(), String(v));
+      }
+      return v;
+    }
+    let unseenCache = null;
+    function unseenList() {
+      if (unseenCache) return unseenCache;
+      const my = me();
+      const since = seenAt();
+      unseenCache = allTx().filter(t => {
+        const who = t.upd ? t.updBy : t.by;
+        return (t.upd || t.at || 0) > since && who && who !== my;
+      }).sort((a, b) => (b.upd || b.at) - (a.upd || a.at));
+      unseenCache.ids = new Set(unseenCache.map(t => t.id));
+      return unseenCache;
+    }
+    function unseenIds() { return unseenList().ids; }
+
+    /* 카드 실적: 카드마다 정한 실적 기간(매달 perfDay일 ~ 다음 달 perfDay-1일, 1이면 1일~말일)에 쓴 금액 */
+    function addDays(date, n) {
+      const [y, m, d] = date.split("-").map(Number);
+      return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+    }
+
+    function perfPeriod(p, ref) {
+      const day = p.perfDay || 1;
+      const k = mkey(ref);
+      const startK = Number(ref.slice(8)) >= dayIn(k, day) ? k : shiftMonth(k, -1);
+      const nextK = shiftMonth(startK, 1);
+      return [`${startK}-${pad(dayIn(startK, day))}`, addDays(`${nextK}-${pad(dayIn(nextK, day))}`, -1)];
+    }
+
+    function perfOf(p, [from, to]) {
+      return allTx().filter(t => t.type !== "in" && t.pay === p.id && t.date >= from && t.date <= to).reduce((a, t) => a + val(t), 0);
+    }
+
+    function md(date) { return `${Number(date.slice(5, 7))}/${Number(date.slice(8))}`; }
+
+    // 결제 이용기간과 같은 실적 기간 (마감일 다음 날부터)
+    function perfDayFromCut(cutDay) { return cutDay >= 28 ? 1 : cutDay + 1; }
+
+    function perfBox(p) {
+      const ref = cur === mkey(today()) ? today() : `${cur}-${pad(daysIn(cur))}`;
+      const period = perfPeriod(p, ref);
+      const prev = perfPeriod(p, addDays(period[0], -1));
+      const u = perfOf(p, period);
+      const pu = perfOf(p, prev);
+      return `<div class="budget" style="margin-top:12px">
+        <div class="budget-top"><span>🎯 실적 ${md(period[0])}~${md(period[1])} · ${won(u)} / ${won(p.perf)}</span><b>${u >= p.perf ? "달성 ✓" : `${won(p.perf - u)} 남음`}</b></div>
+        <div class="bar"><i style="width:${Math.min(100, (u / p.perf) * 100)}%;background:var(--cardc)"></i></div>
+        <div class="budget-tip">지난 실적 기간 ${md(prev[0])}~${md(prev[1])} · ${won(pu)} · ${pu >= p.perf ? "✓ 달성" : "✗ 미달"}</div>
+      </div>`;
+    }
+
+    /* ===== 앱 안 알림 ===== */
+    function dismissed() {
+      try { return JSON.parse(storageGet(DISMISS_KEY)) || {}; } catch (e) { return {}; }
+    }
+
+    function alerts() {
+      const s = state.settings;
+      const now = today();
+      const k = mkey(now);
+      const out = [];
+      for (const p of s.payments) {
+        if (!p.perf) continue;
+        const period = perfPeriod(p, now);
+        const daysLeft = Math.round((new Date(period[1]) - new Date(now)) / 864e5);
+        const u = perfOf(p, period);
+        if (daysLeft <= 7 && u < p.perf) out.push({ key: `perf:${p.id}:${period[0]}`, icon: "🎯", text: `${p.name} 실적까지 ${won(p.perf - u)} 남았어요 (${md(period[1])}까지 ${daysLeft}일)`, go: "cards" });
+      }
+      const spent = sums(spendOf(k)).out;
+      if (s.monthBudget) {
+        const r = spent / s.monthBudget;
+        if (r >= 1) out.push({ key: `bud:${k}:over`, icon: "🚨", text: `이번 달 예산을 ${won(spent - s.monthBudget)} 넘었어요` });
+        else if (r >= 0.8) out.push({ key: `bud:${k}:80`, icon: "⚠️", text: `이번 달 예산의 ${Math.floor(r * 100)}%를 썼어요 (${won(s.monthBudget - spent)} 남음)` });
+      }
+      const byCat = Object.fromEntries(catTotals(spendOf(k)));
+      for (const c of s.cats) {
+        if (c.budget && (byCat[c.id] || 0) > c.budget) out.push({ key: `cat:${c.id}:${k}`, icon: "⚠️", text: `${c.emoji} ${c.name} 예산을 ${won(byCat[c.id] - c.budget)} 넘었어요`, gocat: c.id });
+      }
+      const dis = dismissed();
+      return out.filter(a => !dis[a.key]);
+    }
+
     let billCache = null;
     function billIndex() {
       if (billCache) return billCache;
@@ -668,9 +771,12 @@
       return (billIndex()[k] || []).filter(e => e.billed);
     }
 
+    // 환불·취소는 지출을 줄이는 쪽으로 셉니다
+    function val(t) { return t.refund ? -t.amount : t.amount; }
+
     function sums(list) {
       let out = 0, inc = 0;
-      for (const t of list) t.type === "in" ? (inc += t.amount) : (out += t.amount);
+      for (const t of list) t.type === "in" ? (inc += val(t)) : (out += val(t));
       return { out, inc };
     }
 
@@ -770,6 +876,7 @@
     /* ===== 그리기 ===== */
     function render() {
       billCache = null;
+      unseenCache = null;
       const active = document.activeElement;
       const focusId = active && active.id;
       const caret = focusId && active.selectionStart;
@@ -803,18 +910,20 @@
       const w = memberOf(t.who);
       const p = t.type !== "in" ? payOf(t.pay) : null;
       const used = t.useDate || t.date;
+      const isNew = unseenIds().has(t.id);
       const inst = t.inst > 1 ? (t.instNo ? ` 할부 ${t.instNo}/${t.inst}` : ` ${t.inst}개월 할부`) : "";
       const sub = [
         t.memo ? c.name : "",
         `${w.emoji} ${w.name}`,
         p ? `${p.emoji} ${p.name}${inst}` : "",
         withDate ? `${dayLabel(used)}${t.billed ? " 사용" : ""}` : "",
-        t.fixed ? "📌 고정" : ""
+        t.fixed ? "📌 고정" : "",
+        t.refund ? "↩️ 환불·취소" : ""
       ].filter(Boolean).join(" · ");
       return `<button class="tx" data-tx="${esc(t.id)}" data-m="${mkey(used)}">
         <span class="emo">${esc(c.emoji)}</span>
         <span class="tx-main"><span class="tx-title">${esc(t.memo || c.name)}</span><span class="tx-sub">${esc(sub)}</span></span>
-        <b class="${t.type === "in" ? "inc" : ""}">${t.type === "in" ? "+" : "-"}${won(t.amount)}</b>
+        <b class="${t.type === "in" || t.refund ? "inc" : ""}">${isNew ? '<i class="new-dot" title="새 기록"></i>' : ""}${t.type === "in" || t.refund ? "+" : "-"}${won(t.amount)}</b>
       </button>`;
     }
 
@@ -829,6 +938,30 @@
       if (!me()) {
         html += `<div class="banner"><p>👋 이 휴대폰은 누가 쓰나요? 고르면 기록할 때 자동으로 선택돼요.</p>
           <div class="chips">${s.members.map(m => `<button class="chip" data-me="${esc(m.id)}">${esc(m.emoji)} ${esc(m.name)}</button>`).join("")}</div></div>`;
+      }
+
+      const fresh = unseenList();
+      if (fresh.length) {
+        const by = {};
+        for (const t of fresh) {
+          const w = t.upd ? t.updBy : t.by;
+          const e = (by[w] ||= { add: 0, upd: 0 });
+          t.upd ? e.upd++ : e.add++;
+        }
+        const text = Object.entries(by).map(([w, e]) => `${memberOf(w).emoji} ${memberOf(w).name}: ${[e.add ? `새 기록 ${e.add}건` : "", e.upd ? `고친 기록 ${e.upd}건` : ""].filter(Boolean).join(", ")}`).join(" / ");
+        html += `<div class="card"><h3>🔔 새 기록 <button class="link" id="seenOk">확인했어요</button></h3>
+          <p class="note" style="margin:0 0 4px">${esc(text)}</p>
+          ${fresh.slice(0, 5).map(t => txRow(t, true)).join("")}
+          ${fresh.length > 5 ? `<p class="note" style="margin:6px 0 0">외 ${fresh.length - 5}건은 내역에 <i class="new-dot"></i>로 표시돼요</p>` : ""}
+        </div>`;
+      }
+
+      if (isNow) {
+        const list = alerts();
+        if (list.length) html += `<div class="card alerts">${list.map(a => `<div class="alert-row">
+          <span class="alert-icon">${a.icon}</span>
+          <button class="alert-text" ${a.go ? `data-goto="${a.go}"` : a.gocat ? `data-gocat="${esc(a.gocat)}"` : ""}>${esc(a.text)}</button>
+          <button class="alert-x" data-dismiss="${esc(a.key)}" aria-label="닫기">✕</button></div>`).join("")}</div>`;
       }
 
       if (isNow && s.fixed.length && !s.fixedDone[fkey(cur)]) {
@@ -864,11 +997,11 @@
       // 이번 달 카드값
       if (creditCards().length) {
         const bills = cardBills(cur);
-        const total = bills.reduce((a, e) => a + e.amount, 0);
+        const total = bills.reduce((a, e) => a + val(e), 0);
         html += `<div class="card"><h3>💳 ${monthName(cur)} 카드값 <button class="link" data-goto="cards">자세히 ›</button></h3>
           <div class="bill-total"><span class="bill-meta">결제일에 나가는 돈 합계</span><b>${won(total)}</b></div>
           ${creditCards().map(p => {
-            const v = bills.filter(e => e.pay === p.id).reduce((a, e) => a + e.amount, 0);
+            const v = bills.filter(e => e.pay === p.id).reduce((a, e) => a + val(e), 0);
             const o = p.owner ? memberOf(p.owner) : null;
             return `<button class="set-row" data-goto="cards"><span style="color:var(--text)">${esc(p.emoji)} ${esc(p.name)}${o ? ` <small style="color:var(--sub)">${esc(o.name)}</small>` : ""}</span><span>${Number(cur.slice(5))}월 ${dayIn(cur, p.payDay)}일 · <b style="color:var(--text)">${won(v)}</b></span></button>`;
           }).join("")}
@@ -877,7 +1010,7 @@
 
       // 분류별 지출
       const byCat = {};
-      for (const t of list) if (t.type !== "in") byCat[t.cat] = (byCat[t.cat] || 0) + t.amount;
+      for (const t of list) if (t.type !== "in") byCat[t.cat] = (byCat[t.cat] || 0) + val(t);
       const budgeted = s.cats.filter(c => c.type === "out" && c.budget > 0 && !byCat[c.id]);
       const rows = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
       if (rows.length || budgeted.length) {
@@ -904,7 +1037,7 @@
 
       // 누가 썼나
       const byWho = {};
-      for (const t of list) if (t.type !== "in") byWho[t.who] = (byWho[t.who] || 0) + t.amount;
+      for (const t of list) if (t.type !== "in") byWho[t.who] = (byWho[t.who] || 0) + val(t);
       const whoRows = Object.entries(byWho).sort((a, b) => b[1] - a[1]);
       if (whoRows.length) {
         html += `<div class="card"><h3>누가 썼나</h3>
@@ -940,10 +1073,10 @@
       for (const t of list) {
         const d = Number(t.date.slice(8));
         const e = (daily[d] ||= { out: 0, inc: 0 });
-        t.type === "in" ? (e.inc += t.amount) : (e.out += t.amount);
+        t.type === "in" ? (e.inc += val(t)) : (e.out += val(t));
       }
       const cardDay = {};
-      for (const e of cardBills(cur)) cardDay[Number(e.date.slice(8))] = (cardDay[Number(e.date.slice(8))] || 0) + e.amount;
+      for (const e of cardBills(cur)) cardDay[Number(e.date.slice(8))] = (cardDay[Number(e.date.slice(8))] || 0) + val(e);
       const todayStr = today();
       if (filter.day > n) filter.day = 0;
 
@@ -964,6 +1097,7 @@
           </div>
           <select id="fltWho">${opt("", "모든 사람", filter.who)}${s.members.map(mm => opt(mm.id, `${mm.emoji} ${mm.name}`, filter.who)).join("")}</select>
           ${s.payments.length > 1 ? `<select id="fltPay">${opt("", "모든 결제수단", filter.pay)}${s.payments.map(p => opt(p.id, `${p.emoji} ${p.name}`, filter.pay)).join("")}</select>` : ""}
+          ${(() => { const tags = topTags(allTx()); return tags.length ? `<select id="fltTag">${opt("", "모든 태그", filter.tag)}${tags.map(g => opt(g, `#${g}`, filter.tag)).join("")}</select>` : ""; })()}
           <select id="fltCat">${opt("", "모든 분류", filter.cat)}${s.cats.map(c => opt(c.id, `${c.emoji} ${c.name}`, filter.cat)).join("")}</select>
           <input id="fltQ" type="search" placeholder="🔍 메모 검색" value="${esc(filter.q)}" />
         </div>
@@ -973,22 +1107,24 @@
 
     function renderListBody() {
       const q = filter.q.trim().toLowerCase();
-      const list = txOf(cur).filter(t =>
+      // 태그는 여행처럼 여러 달에 걸치니 전체 기간에서 찾습니다
+      const list = (filter.tag ? allTx() : txOf(cur)).filter(t =>
         (filter.type === "all" || t.type === filter.type) &&
         (!filter.who || t.who === filter.who) &&
         (!filter.cat || t.cat === filter.cat) &&
         (!filter.pay || t.pay === filter.pay) &&
-        (!filter.day || Number(t.date.slice(8)) === filter.day) &&
+        (!filter.tag || tagsOf(t).includes(filter.tag)) &&
+        (!filter.day || filter.tag || Number(t.date.slice(8)) === filter.day) &&
         (!q || (t.memo || "").toLowerCase().includes(q) || catOf(t.cat).name.toLowerCase().includes(q))
       ).sort(byNewest);
       const { out, inc } = sums(list);
-      const filtered = filter.type !== "all" || filter.who || filter.cat || filter.pay || filter.day || q;
+      const filtered = filter.type !== "all" || filter.who || filter.cat || filter.pay || filter.tag || filter.day || q;
 
-      let html = `<div class="list-sum">${filter.day ? `${Number(cur.slice(5))}월 ${filter.day}일 · ` : ""}${list.length}건 · 지출 ${won(out)} · 수입 ${won(inc)}
+      let html = `<div class="list-sum">${filter.tag ? `#${esc(filter.tag)} 전체 기간 · ` : ""}${filter.day ? `${Number(cur.slice(5))}월 ${filter.day}일 · ` : ""}${list.length}건 · 지출 ${won(out)} · 수입 ${won(inc)}
         ${filtered ? ` <button class="link" id="clearFilter">필터 지우기</button>` : ""}</div>`;
       if (filter.day) {
         const due = {};
-        for (const e of cardBills(cur)) if (Number(e.date.slice(8)) === filter.day) due[e.pay] = (due[e.pay] || 0) + e.amount;
+        for (const e of cardBills(cur)) if (Number(e.date.slice(8)) === filter.day) due[e.pay] = (due[e.pay] || 0) + val(e);
         for (const [id, v] of Object.entries(due)) {
           const p = payOf(id);
           html += `<button class="cardpay" data-goto="cards"><span>${esc(p.emoji)} ${esc(p.name)} 카드값 나가는 날</span><span>-${won(v)} ›</span></button>`;
@@ -1076,7 +1212,7 @@
 
     function catTotals(list) {
       const m = {};
-      for (const t of list) if (t.type !== "in") m[t.cat] = (m[t.cat] || 0) + t.amount;
+      for (const t of list) if (t.type !== "in") m[t.cat] = (m[t.cat] || 0) + val(t);
       return Object.entries(m).sort((a, b) => b[1] - a[1]);
     }
 
@@ -1108,7 +1244,7 @@
 
     function whoCard(list, out) {
       const byWho = {};
-      for (const t of list) if (t.type !== "in") byWho[t.who] = (byWho[t.who] || 0) + t.amount;
+      for (const t of list) if (t.type !== "in") byWho[t.who] = (byWho[t.who] || 0) + val(t);
       const rows = Object.entries(byWho).sort((a, b) => b[1] - a[1]);
       if (!rows.length) return "";
       return `<div class="card"><h3>누가 썼나</h3>${rows.map(([id, v]) => {
@@ -1117,6 +1253,15 @@
           <span class="cat-top"><span>${esc(m.name)}</span><b>${won(v)} <small style="color:var(--sub);font-weight:500">${Math.round((v / out) * 100)}%</small></b></span>
           <span class="bar"><i style="width:${(v / out) * 100}%"></i></span></span></div>`;
       }).join("")}</div>`;
+    }
+
+    function tagCard(list, title) {
+      const n = {};
+      for (const t of list) if (t.type !== "in") for (const g of tagsOf(t)) n[g] = (n[g] || 0) + val(t);
+      const rows = Object.entries(n).sort((a, b) => b[1] - a[1]);
+      if (!rows.length) return "";
+      return `<div class="card"><h3>${title} <small>누르면 내역 보기</small></h3>${rows.map(([g, v]) =>
+        `<button class="set-row" data-gotag="${esc(g)}"><b>#${esc(g)}</b><span style="color:var(--text)">${won(v)}</span></button>`).join("")}</div>`;
     }
 
     function renderStats() {
@@ -1136,7 +1281,7 @@
       const isNow = cur === mkey(today());
       const lastDay = isNow ? Number(today().slice(8)) : cur > mkey(today()) ? 0 : n;
       const daily = Array(n).fill(0);
-      for (const t of list) if (t.type !== "in") daily[Number(t.date.slice(8)) - 1] += t.amount;
+      for (const t of list) if (t.type !== "in") daily[Number(t.date.slice(8)) - 1] += val(t);
       let acc = 0;
       const cumulative = daily.map((v, i) => (i < lastDay ? (acc += v) : null));
       const spentDays = daily.filter(Boolean).length;
@@ -1171,7 +1316,7 @@
               scales: axes(true),
               onClick: (e, els) => {
                 if (!els.length) return;
-                Object.assign(filter, { type: "all", who: "", cat: "", q: "", pay: "", day: els[0].index + 1 });
+                Object.assign(filter, { type: "all", who: "", cat: "", q: "", pay: "", tag: "", day: els[0].index + 1 });
                 tab = "list";
                 render();
               }
@@ -1184,6 +1329,7 @@
       html += donutCard("분류별 지출", rows, out, "chCatM");
       if (rows.length) specs.push(donutSpec("chCatM", rows));
       html += whoCard(list, out);
+      html += tagCard(list, "태그별 지출");
 
       html += `<div class="card"><h3>최근 6개월 <small>막대를 누르면 그 달로 이동</small></h3>
         ${colBars(Array.from({ length: 6 }, (_, i) => shiftMonth(cur, i - 5)), k => `${Number(k.slice(5))}월`)}</div>`;
@@ -1277,6 +1423,7 @@
       html += donutCard(`${year}년 분류별 지출`, rows, ys.out, "chCatY", v => ` · 월 ${shortWon(v / avgDiv)}`);
       if (rows.length) specs.push(donutSpec("chCatY", rows));
       html += whoCard(list, ys.out);
+      html += tagCard(list, `${year}년 태그별 지출`);
 
       // 해마다 비교
       const monthKeys = Object.keys(state.settings.basis === "bill" ? billIndex() : state.months);
@@ -1298,21 +1445,22 @@
           <button class="btn primary" style="width:100%" data-addpay="credit">＋ 신용카드 등록</button></div>`;
       } else {
         const bills = cardBills(cur);
-        const total = bills.reduce((a, e) => a + e.amount, 0);
+        const total = bills.reduce((a, e) => a + val(e), 0);
         const nextK = shiftMonth(cur, 1);
-        const nextTotal = cardBills(nextK).reduce((a, e) => a + e.amount, 0);
+        const nextTotal = cardBills(nextK).reduce((a, e) => a + val(e), 0);
         html += `<div class="card">
           <div class="bill-total"><span class="hero-label">${monthName(cur)} 카드값 합계</span><b>${won(total)}</b></div>
           <div class="bill-meta" style="margin-top:6px">${monthName(nextK)}에 나갈 돈 (지금까지): ${won(nextTotal)}</div>
         </div>`;
         for (const p of cards) {
           const mine = bills.filter(e => e.pay === p.id).sort((a, b) => a.useDate.localeCompare(b.useDate) || (a.at || 0) - (b.at || 0));
-          const v = mine.reduce((a, e) => a + e.amount, 0);
+          const v = mine.reduce((a, e) => a + val(e), 0);
           const [from, to] = usePeriod(p, cur);
           const o = p.owner ? memberOf(p.owner) : null;
           const byWho = {};
-          for (const e of mine) byWho[e.who] = (byWho[e.who] || 0) + e.amount;
+          for (const e of mine) byWho[e.who] = (byWho[e.who] || 0) + val(e);
           const instN = mine.filter(e => e.instNo).length;
+          const perf = p.perf ? perfBox(p) : "";
           html += `<div class="card">
             <div class="bill-head">
               <span class="emo">${esc(p.emoji)}</span>
@@ -1324,14 +1472,21 @@
               <button class="link" data-editpay="${esc(p.id)}" aria-label="카드 설정">⚙️</button>
             </div>
             ${Object.keys(byWho).length ? `<div class="who-chips">${Object.entries(byWho).sort((a, b) => b[1] - a[1]).map(([id, x]) => `<span>${esc(memberOf(id).emoji)} ${esc(memberOf(id).name)} ${shortWon(x)}</span>`).join("")}${instN ? `<span>할부 ${instN}건</span>` : ""}</div>` : ""}
+            ${perf}
             ${mine.length ? `<details class="bill-list"><summary>쓴 내역 ${mine.length}건 보기</summary>${mine.map(e => txRow(e, true)).join("")}</details>` : `<div class="bill-meta" style="margin-top:8px">이번 결제일에 나갈 내역이 없어요.</div>`}
           </div>`;
         }
       }
 
+      // 실적만 보는 체크카드
+      for (const p of state.settings.payments.filter(x => x.kind === "check" && x.perf)) {
+        html += `<div class="card"><div class="bill-head"><span class="emo">${esc(p.emoji)}</span><span class="cat-main" style="flex:1"><b style="font-size:1rem">${esc(p.name)}</b> <small style="color:var(--sub)">체크카드</small></span></div>
+          ${perfBox(p)}</div>`;
+      }
+
       // 결제수단별 (쓴 날 기준)
       const used = {};
-      for (const t of txOf(cur)) if (t.type !== "in") used[t.pay || ""] = (used[t.pay || ""] || 0) + t.amount;
+      for (const t of txOf(cur)) if (t.type !== "in") used[t.pay || ""] = (used[t.pay || ""] || 0) + val(t);
       const rows = Object.entries(used).sort((a, b) => b[1] - a[1]);
       if (rows.length) {
         const tot = rows.reduce((a, r) => a + r[1], 0);
@@ -1366,7 +1521,7 @@
         <div class="card"><h3>💳 카드·결제수단 <button class="link" data-addpay="credit">＋ 추가</button></h3>
           ${s.payments.map(p => {
             const o = p.owner ? memberOf(p.owner) : null;
-            const info = p.kind === "credit" ? `매달 ${p.payDay}일 결제 · ${p.cutDay >= 31 ? "말일" : `${p.cutDay}일`} 마감` : PAY_KINDS[p.kind];
+            const info = (p.kind === "credit" ? `매달 ${p.payDay}일 결제 · ${p.cutDay >= 31 ? "말일" : `${p.cutDay}일`} 마감` : PAY_KINDS[p.kind]) + (p.perf ? ` · 실적 ${shortWon(p.perf)}(${(p.perfDay || 1) === 1 ? "1일~말일" : `${p.perfDay}일~`})` : "");
             return `<button class="set-row" data-editpay="${esc(p.id)}"><span style="color:var(--text)">${esc(p.emoji)} ${esc(p.name)}${o ? ` <small style="color:var(--sub)">${esc(o.name)}</small>` : ""}</span><span>${info} ›</span></button>`;
           }).join("")}
           <div class="sub-h">홈·통계에서 신용카드 지출을 언제 쓴 돈으로 볼까요?</div>
@@ -1390,6 +1545,11 @@
             const c = catOf(f.cat);
             return `<button class="set-row" data-editfixed="${esc(f.id)}"><span style="color:var(--text)">${esc(c.emoji)} 매달 ${f.day}일 · ${esc(f.memo || c.name)}</span><b class="${f.type === "in" ? "inc" : ""}">${f.type === "in" ? "+" : "-"}${won(f.amount)}</b></button>`;
           }).join("") : ""}
+        </div>
+
+        <div class="card"><h3>⭐ 자주 쓰는 내역</h3>
+          <p class="note">기록할 때 ⭐ 버튼으로 저장하면 기록 창 맨 위에서 한 번에 고를 수 있어요. 세 번 이상 적은 메모도 자동으로 나와요.</p>
+          ${s.favs.length ? `<div class="chips">${s.favs.map(f => `<button class="chip" data-delfav="${esc(f.id)}">${esc(catOf(f.cat).emoji)} ${esc(f.memo || catOf(f.cat).name)} <small>${shortWon(f.amount)} ✕</small></button>`).join("")}</div>` : ""}
         </div>
 
         <div class="card"><h3>분류</h3>
@@ -1435,12 +1595,76 @@
 
     const head = title => `<div class="sheet-head"><h2>${title}</h2><button class="x" data-close aria-label="닫기">✕</button></div>`;
 
+    // 자주 쓰는 내역: 즐겨찾기 + 최근에 3번 이상 쓴 메모
+    function quickPicks(recent) {
+      const favs = state.settings.favs;
+      const seen = new Set(favs.map(f => f.memo));
+      const count = {};
+      for (const t of recent.slice(0, 300)) {
+        if (t.type !== "out" || t.refund || !t.memo || seen.has(t.memo)) continue;
+        (count[t.memo] ||= { n: 0, t }).n++;
+      }
+      const auto = Object.values(count).filter(c => c.n >= 3).sort((a, b) => b.n - a.n).map(c => c.t);
+      return [...favs, ...auto].slice(0, 8);
+    }
+
+    function tagsOf(t) {
+      return ((t.memo || "").match(/#[^\s#]+/g) || []).map(x => x.slice(1));
+    }
+
+    function topTags(list) {
+      const n = {};
+      for (const t of list) for (const g of tagsOf(t)) n[g] = (n[g] || 0) + 1;
+      return Object.entries(n).sort((a, b) => b[1] - a[1]).map(([g]) => g);
+    }
+
+    function stamp(ms) {
+      const d = new Date(ms);
+      return `${d.getMonth() + 1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function whoWrote(t) {
+      const parts = [];
+      if (t.by && t.at > 1e12) parts.push(`${memberOf(t.by).emoji} ${memberOf(t.by).name} · ${stamp(t.at)} 적음`);
+      if (t.upd) parts.push(`${t.updBy ? `${memberOf(t.updBy).emoji} ${memberOf(t.updBy).name} · ` : ""}${stamp(t.upd)} 고침`);
+      return parts.join(" · ");
+    }
+
+    /* ===== 카드 문자 읽기 =====
+       예) [Web발신] 신한카드(1234)승인 홍*동 12,000원(일시불)10/23 14:22 스타벅스 누적345,000원
+           KB국민카드1*2*승인 / 홍*동님 / 35,000원 3개월 / 10/23 12:01 / 이마트 / 누적… */
+    function parseSms(text) {
+      const t = text.replace(/\[Web발신\]/g, " ").replace(/\r/g, "");
+      const am = t.match(/(\d{1,3}(?:,\d{3})+|\d+)\s*원/);
+      const r = { amount: am ? digits(am[1]) : 0, cancel: /취소/.test(t), inst: 1, date: "", merchant: "", pay: "" };
+      const im = t.match(/(\d{1,2})\s*개월/);
+      if (im && Number(im[1]) > 1) r.inst = Number(im[1]);
+      const dm = t.match(/(?:^|[^\d])(\d{1,2})[/.-](\d{1,2})(?:\s*(\d{1,2}):(\d{2}))?/);
+      if (dm && Number(dm[1]) >= 1 && Number(dm[1]) <= 12 && Number(dm[2]) >= 1 && Number(dm[2]) <= 31) {
+        const now = today();
+        let y = Number(now.slice(0, 4));
+        let date = `${y}-${pad(dm[1])}-${pad(dm[2])}`;
+        if (date > now) date = `${y - 1}-${pad(dm[1])}-${pad(dm[2])}`;
+        r.date = date;
+        const rest = t.slice(dm.index + dm[0].length);
+        r.merchant = (rest.split("\n").map(x => x.replace(/(누적|잔액|사용가능).*/, "").trim()).find(Boolean) || "").slice(0, 30);
+      }
+      // 등록한 카드 이름(“카드”를 뺀 부분)이 문자에 있으면 그 카드로
+      const cands = state.settings.payments.filter(p => p.kind !== "cash").map(p => ({ p, key: p.name.replace(/카드|체크|신용|\s/g, "") }))
+        .filter(c => c.key && t.includes(c.key));
+      const check = /체크/.test(t);
+      const hit = cands.find(c => (c.p.kind === "check") === check) || cands[0];
+      if (hit) r.pay = hit.p.id;
+      return r;
+    }
+
     // 거래 기록 / 고정지출 등록에 같이 씁니다
     function openTxForm(old, isFixed, resume) {
       const s = state.settings;
       const viewDate = cur === mkey(today()) ? today() : `${cur}-01`;
       const draft = resume ? { ...resume } : old ? { ...old } : {
         type: "out",
+        refund: false,
         amount: 0,
         cat: s.cats.find(c => c.type === "out").id,
         who: me() || s.members[0].id,
@@ -1451,11 +1675,22 @@
         inst: 1
       };
       draft.inst = draft.inst || 1;
+      draft.refund = !!draft.refund;
       let catTouched = !!old || !!resume;
-      const memos = [...new Set(allTx().sort(byNewest).map(t => t.memo).filter(Boolean))].slice(0, 60);
+      const recent = allTx().sort(byNewest);
+      const memos = [...new Set(recent.map(t => t.memo).filter(Boolean))].slice(0, 60);
+      const tags = topTags(recent).slice(0, 10);
+      const picks = isFixed || old ? [] : quickPicks(recent);
+      const fresh = !isFixed && !old;
 
       openSheet(`${head(isFixed ? (old ? "고정 항목 고치기" : "고정 항목 추가") : (old ? "기록 고치기" : "기록하기"))}
-        <div class="seg big" id="fType"><button data-v="out">지출</button><button data-v="in">수입</button></div>
+        ${fresh ? `<button class="btn small" id="fSms" type="button" style="margin-bottom:12px">📩 카드 문자 붙여넣기</button>
+          <div id="fSmsBox" hidden style="margin-bottom:12px">
+            <textarea class="field" id="fSmsText" rows="4" placeholder="카드 승인 문자를 길게 눌러 복사한 뒤 여기에 붙여 넣으세요"></textarea>
+            <button class="btn small primary" id="fSmsGo" type="button" style="margin-top:8px">내용 채우기</button>
+          </div>` : ""}
+        ${picks.length ? `<div class="chips" id="fQuick" style="margin-bottom:14px">${picks.map((q, i) => `<button class="chip" data-i="${i}">${q.fav ? "⭐" : esc(catOf(q.cat).emoji)} ${esc(q.memo || catOf(q.cat).name)} <small>${shortWon(q.amount)}</small></button>`).join("")}</div>` : ""}
+        <div class="seg big" id="fType"><button data-v="out">지출</button><button data-v="in">수입</button>${isFixed ? "" : `<button data-v="refund">환불·취소</button>`}</div>
         <div class="amt-wrap"><input id="fAmt" inputmode="numeric" placeholder="0" autocomplete="off" /><span>원</span></div>
         <div class="quick">${[[1000, "+1천"], [5000, "+5천"], [10000, "+1만"], [50000, "+5만"], [100000, "+10만"]].map(([v, l]) => `<button data-add="${v}">${l}</button>`).join("")}<button data-add="0">지우기</button></div>
         <label class="lbl">분류</label><div class="chips" id="fCat"></div>
@@ -1471,15 +1706,23 @@
         ${isFixed
           ? `<label class="lbl" for="fDay">매달 며칠</label><input class="field" id="fDay" type="number" min="1" max="31" inputmode="numeric" />`
           : `<label class="lbl" for="fDate">날짜</label><input class="field" id="fDate" type="date" />`}
-        <label class="lbl" for="fMemo">메모</label>
+        <label class="lbl" for="fMemo">메모 <small style="font-weight:400">· #제주여행 처럼 태그를 붙이면 모아 볼 수 있어요</small></label>
         <input class="field" id="fMemo" placeholder="예: 이마트 장보기" maxlength="40" list="memoList" autocomplete="off" />
         <datalist id="memoList">${memos.map(m => `<option value="${esc(m)}"></option>`).join("")}</datalist>
-        <div class="sheet-actions">${old ? `<button class="btn danger" id="fDel">삭제</button>` : ""}<button class="btn primary" id="fSave">저장</button></div>`);
+        ${tags.length ? `<div class="chips" id="fTags" style="margin-top:8px">${tags.map(g => `<button class="chip" data-t="${esc(g)}">#${esc(g)}</button>`).join("")}</div>` : ""}
+        ${old && !isFixed && whoWrote(old) ? `<p class="note" style="margin:12px 0 0">✍️ ${esc(whoWrote(old))}</p>` : ""}
+        <div class="sheet-actions">
+          ${old ? `<button class="btn danger" id="fDel">삭제</button>` : ""}
+          ${old && !isFixed ? `<button class="btn" id="fCopy" style="flex:0 0 auto">📄 복사</button>` : ""}
+          ${isFixed ? "" : `<button class="btn" id="fFav" style="flex:0 0 auto" title="자주 쓰는 내역에 저장">⭐</button>`}
+          <button class="btn primary" id="fSave">저장</button>
+        </div>`);
 
       const amt = $("fAmt");
       const showAmt = () => { amt.value = draft.amount ? draft.amount.toLocaleString("ko-KR") : ""; };
+      const kind = () => (draft.type === "in" ? "in" : draft.refund ? "refund" : "out");
       const paint = () => {
-        for (const b of $("fType").children) b.classList.toggle("on", b.dataset.v === draft.type);
+        for (const b of $("fType").children) b.classList.toggle("on", b.dataset.v === kind());
         $("fCat").innerHTML = s.cats.filter(c => c.type === draft.type)
           .map(c => `<button class="chip ${c.id === draft.cat ? "on" : ""}" data-v="${esc(c.id)}">${esc(c.emoji)} ${esc(c.name)}</button>`).join("");
         $("fWho").innerHTML = s.members
@@ -1492,13 +1735,21 @@
       const paintBill = () => {
         const p = payOf(draft.pay);
         const credit = p && p.kind === "credit";
-        $("fInstRow").hidden = isFixed || !credit;
+        $("fInstRow").hidden = isFixed || !credit || draft.refund;
         if (!credit || draft.type === "in") { $("fBill").textContent = ""; return; }
         if (isFixed) { $("fBill").textContent = `💳 매달 ${p.payDay}일 결제되는 카드값에 합산돼요`; return; }
         const date = $("fDate") && $("fDate").value || draft.date;
-        const n = draft.inst || 1;
         const first = billDate(p, date);
+        if (draft.refund) { $("fBill").textContent = `💳 ${dayLabel(first)} 결제되는 카드값에서 빠져요`; return; }
+        const n = draft.inst || 1;
         $("fBill").textContent = `💳 ${dayLabel(first)} 결제` + (n > 1 ? `부터 ${n}개월 동안 매달 약 ${won(Math.floor(draft.amount / n))}` : "");
+      };
+      // 예전에 쓴 메모와 같으면 그때 분류를 따라 고릅니다
+      const catFromMemo = () => {
+        if (catTouched) return;
+        const memo = $("fMemo").value.trim();
+        const prev = recent.find(t => t.memo === memo && t.type === draft.type);
+        if (prev && s.cats.some(c => c.id === prev.cat)) draft.cat = prev.cat;
       };
       showAmt();
       paint();
@@ -1516,23 +1767,29 @@
         $("fInst").value = String(draft.inst);
         paint();
       };
-      // 카드를 등록하고 돌아오면 적던 내용을 그대로 이어서 씁니다
-      $("sheet").querySelector("[data-addpay-in-form]").onclick = () => {
+      const keep = () => {
         if (isFixed) draft.day = Number($("fDay").value) || draft.day;
         else draft.date = $("fDate").value || draft.date;
         draft.memo = $("fMemo").value;
+      };
+      // 카드를 등록하고 돌아오면 적던 내용을 그대로 이어서 씁니다
+      $("sheet").querySelector("[data-addpay-in-form]").onclick = () => {
+        keep();
         openPayForm(null, "credit", p => {
           draft.pay = p.id;
           openTxForm(old, isFixed, draft);
         });
       };
       $("fMemo").value = draft.memo || "";
-      if (!old) setTimeout(() => amt.focus(), 250);
+      if (fresh && !resume) setTimeout(() => amt.focus(), 250);
 
       $("fType").onclick = e => {
         const b = e.target.closest("button");
-        if (!b || b.dataset.v === draft.type) return;
-        draft.type = b.dataset.v;
+        if (!b || b.dataset.v === kind()) return;
+        draft.type = b.dataset.v === "in" ? "in" : "out";
+        draft.refund = b.dataset.v === "refund";
+        if (draft.refund) draft.inst = 1;
+        $("fInst").value = String(draft.inst);
         if (catOf(draft.cat).type !== draft.type) draft.cat = s.cats.find(c => c.type === draft.type).id;
         paint();
       };
@@ -1562,14 +1819,62 @@
         draft.who = b.dataset.v;
         paint();
       };
-      // 예전에 쓴 메모를 고르면 그때 분류를 따라 고릅니다
-      $("fMemo").onchange = () => {
-        if (catTouched) return;
-        const prev = allTx().sort(byNewest).find(t => t.memo === $("fMemo").value.trim() && t.type === draft.type);
-        if (prev && s.cats.some(c => c.id === prev.cat)) {
-          draft.cat = prev.cat;
+      $("fMemo").onchange = () => { catFromMemo(); paint(); };
+      if ($("fTags")) $("fTags").onclick = e => {
+        const b = e.target.closest("button");
+        if (!b) return;
+        const tag = `#${b.dataset.t}`;
+        const memo = $("fMemo").value.trim();
+        if (!memo.split(/\s+/).includes(tag)) $("fMemo").value = memo ? `${memo} ${tag}` : tag;
+      };
+      if ($("fQuick")) $("fQuick").onclick = e => {
+        const b = e.target.closest("button");
+        if (!b) return;
+        const q = picks[Number(b.dataset.i)];
+        Object.assign(draft, { type: "out", refund: false, amount: q.amount, cat: q.cat, pay: payOf(q.pay) ? q.pay : draft.pay, inst: 1 });
+        $("fMemo").value = q.memo || "";
+        $("fInst").value = "1";
+        catTouched = true;
+        showAmt();
+        paint();
+      };
+      if (fresh) {
+        $("fSms").onclick = async () => {
+          $("fSmsBox").hidden = false;
+          try {
+            const clip = await navigator.clipboard.readText();
+            if (/원/.test(clip) && !$("fSmsText").value) $("fSmsText").value = clip;
+          } catch (e) { /* 붙여넣기 권한이 없으면 직접 붙여 넣기 */ }
+          $("fSmsText").focus();
+        };
+        $("fSmsGo").onclick = () => {
+          const r = parseSms($("fSmsText").value);
+          if (!r.amount) return toast("문자에서 금액을 찾지 못했어요");
+          Object.assign(draft, { type: "out", refund: r.cancel, amount: r.amount, inst: r.cancel ? 1 : r.inst });
+          if (r.pay) draft.pay = r.pay;
+          if (r.date) $("fDate").value = r.date;
+          if (r.merchant) $("fMemo").value = r.merchant;
+          if (catOf(draft.cat).type !== "out") draft.cat = s.cats.find(c => c.type === "out").id;
+          catFromMemo();
+          $("fInst").value = String(draft.inst);
+          $("fSmsBox").hidden = true;
+          $("fSmsText").value = "";
+          showAmt();
           paint();
-        }
+          const p = payOf(draft.pay);
+          toast(`${r.cancel ? "취소 " : ""}${won(r.amount)}${r.merchant ? ` · ${r.merchant}` : ""}${r.pay && p ? ` · ${p.name}` : ""} 채웠어요. ${r.pay ? "확인 후 저장하세요" : "카드는 직접 골라 주세요"}`);
+        };
+      }
+      $("fFav") && ($("fFav").onclick = () => {
+        const memo = $("fMemo").value.trim();
+        if (!draft.amount || draft.type !== "out" || draft.refund) return toast("지출 금액을 넣은 뒤 눌러 주세요");
+        if (s.favs.some(f => f.memo === memo && f.cat === draft.cat && f.amount === draft.amount)) return toast("이미 자주 쓰는 내역에 있어요");
+        saveSettings({ favs: [...s.favs, { id: uid(), fav: true, amount: draft.amount, cat: draft.cat, pay: draft.pay || "", memo }] });
+        toast("⭐ 자주 쓰는 내역에 저장했어요. 다음부터 맨 위에서 바로 고를 수 있어요");
+      });
+      if (old && !isFixed) $("fCopy").onclick = () => {
+        keep();
+        openTxForm(null, false, { ...draft, date: today(), who: me() || draft.who });
       };
 
       $("fSave").onclick = () => {
@@ -1580,6 +1885,7 @@
         }
         const memo = $("fMemo").value.trim();
         const pay = draft.type === "in" ? "" : draft.pay || "";
+        const refund = draft.type === "out" && draft.refund;
         const credit = payOf(pay) && payOf(pay).kind === "credit";
         if (pay) storageSet(PAY_KEY, pay);
         if (isFixed) {
@@ -1590,7 +1896,12 @@
           return;
         }
         const date = $("fDate").value || viewDate;
-        const t = { id: old ? old.id : uid(), type: draft.type, amount: draft.amount, cat: draft.cat, who: draft.who, date, memo, pay, inst: credit ? draft.inst || 1 : 1, fixed: !!(old && old.fixed), at: old ? old.at || Date.now() : Date.now() };
+        const t = {
+          id: old ? old.id : uid(), type: draft.type, refund, amount: draft.amount, cat: draft.cat, who: draft.who, date, memo,
+          pay, inst: credit && !refund ? draft.inst || 1 : 1, fixed: !!(old && old.fixed),
+          at: old ? old.at || Date.now() : Date.now(), by: old ? old.by || "" : me() || ""
+        };
+        if (old) Object.assign(t, { upd: Date.now(), updBy: me() || "" });
         writeTxs([t], old && mkey(old.date) !== mkey(date) ? [{ id: t.id, month: mkey(old.date) }] : []);
         closeSheet();
         if (mkey(date) !== cur) toast(`${monthName(mkey(date))}에 저장했어요`);
@@ -1667,17 +1978,34 @@
           <select class="field" id="pCut">${Array.from({ length: 30 }, (_, i) => `<option value="${i + 1}">${i + 1}일까지</option>`).join("")}<option value="31">말일까지</option></select>
           <div class="pay-note" id="pPreview"></div>
         </div>
+        <div id="pPerfWrap">
+          <label class="lbl" for="pPerf">전월실적 기준 (혜택 받으려면 한 달에 얼마 써야 하나요? 없으면 비워 두기)</label>
+          <input class="field" id="pPerf" inputmode="numeric" placeholder="예: 300,000" />
+          <label class="lbl" for="pPerfDay">실적 기간 (카드사에서 실적을 세는 기간)</label>
+          <select class="field" id="pPerfDay"><option value="1">매달 1일 ~ 말일</option>${Array.from({ length: 27 }, (_, i) => `<option value="${i + 2}">매달 ${i + 2}일 ~ 다음 달 ${i + 1}일</option>`).join("")}</select>
+          <div class="pay-note" id="pPerfNote"></div>
+        </div>
         <div class="sheet-actions">${old ? `<button class="btn danger" id="pDel">삭제</button>` : ""}<button class="btn primary" id="pSave">저장</button></div>`);
       $("pName").value = d.name;
       $("pEmoji").value = d.emoji;
       $("pPay").value = d.payDay || 14;
       $("pCut").value = String(d.cutDay || 31);
+      $("pPerf").value = d.perf ? d.perf.toLocaleString("ko-KR") : "";
+      let perfTouched = !!(old && old.perfDay);
+      $("pPerfDay").value = String(d.perfDay || 1);
+      $("pPerfDay").onchange = () => { perfTouched = true; paint(); };
+      $("pPerf").oninput = () => { const v = digits($("pPerf").value); $("pPerf").value = v ? v.toLocaleString("ko-KR") : ""; };
       bindEmoji($("pEmoji"));
       const paint = () => {
         for (const b of $("pKind").children) b.classList.toggle("on", b.dataset.v === d.kind);
         $("pOwner").innerHTML = [{ id: "", emoji: "👨‍👩‍👧", name: "같이 씀" }, ...s.members]
           .map(m => `<button class="chip ${m.id === (d.owner || "") ? "on" : ""}" data-v="${esc(m.id)}">${esc(m.emoji)} ${esc(m.name)}</button>`).join("");
         $("pCredit").hidden = d.kind !== "credit";
+        $("pPerfWrap").hidden = d.kind === "cash";
+        // 실적 기간은 따로 고르기 전까지 결제 이용기간(신용카드)이나 1일~말일(체크카드)을 따라갑니다
+        if (!perfTouched) $("pPerfDay").value = String(d.kind === "credit" ? perfDayFromCut(Number($("pCut").value)) : 1);
+        const pp = perfPeriod({ perfDay: Number($("pPerfDay").value) }, today());
+        $("pPerfNote").innerHTML = `지금 실적 기간: <b>${md(pp[0])} ~ ${md(pp[1])}</b><br><small>카드사 앱의 “전월실적 기준 기간”을 확인해 맞춰 주세요. 신용카드는 보통 결제 이용기간과 같아요.</small>`;
         const p = { payDay: Math.min(31, Math.max(1, Number($("pPay").value) || 1)), cutDay: Number($("pCut").value) };
         const k = mkey(today());
         const [from, to] = usePeriod(p, k);
@@ -1709,6 +2037,10 @@
         const name = $("pName").value.trim();
         if (!name) return toast("이름을 넣어 주세요");
         const p = { id: old ? old.id : uid(), name, emoji: $("pEmoji").value.trim() || "💳", kind: d.kind, owner: d.owner || "" };
+        if (d.kind !== "cash" && digits($("pPerf").value)) {
+          p.perf = digits($("pPerf").value);
+          p.perfDay = Number($("pPerfDay").value) || 1;
+        }
         if (d.kind === "credit") {
           p.payDay = Math.min(31, Math.max(1, Number($("pPay").value) || 1));
           p.cutDay = Number($("pCut").value) || 31;
@@ -1779,8 +2111,8 @@
       for (const t of list.sort((a, b) => a.date.localeCompare(b.date) || (a.at || 0) - (b.at || 0))) {
         const p = t.type !== "in" ? payOf(t.pay) : null;
         const credit = p && p.kind === "credit";
-        rows.push([t.date, t.type === "in" ? "수입" : "지출", catOf(t.cat).name, t.type === "in" ? t.amount : -t.amount, memberOf(t.who).name,
-          p ? p.name : "", credit ? (t.inst > 1 ? `${t.inst}개월` : "일시불") : "", credit ? billDate(p, t.date) : "", t.memo || ""]);
+        rows.push([t.date, t.type === "in" ? "수입" : t.refund ? "환불·취소" : "지출", catOf(t.cat).name, t.type === "in" ? t.amount : -val(t), memberOf(t.who).name,
+          p ? p.name : "", credit && !t.refund ? (t.inst > 1 ? `${t.inst}개월` : "일시불") : "", credit ? billDate(p, t.date) : "", t.memo || ""]);
       }
       const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\r\n");
       download(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }), name);
@@ -1844,7 +2176,12 @@
         ]);
         const app = getApps()[0] || initializeApp(config);
         remote.fs = fs;
-        remote.db = fs.getFirestore(app);
+        // 인터넷이 끊겨도 적은 기록을 휴대폰에 보관했다가 연결되면 올립니다
+        try {
+          remote.db = fs.initializeFirestore(app, { localCache: fs.persistentLocalCache({ tabManager: fs.persistentMultipleTabManager() }) });
+        } catch (e) {
+          remote.db = fs.getFirestore(app);
+        }
         remote.settingsRef = fs.doc(remote.db, "budgets", code);
         remote.monthsCol = fs.collection(remote.settingsRef, "months");
         if (seed) await pushAll();
@@ -1898,6 +2235,7 @@
       disconnectRoom();
       room = code;
       storageSet(ROOM_KEY, code);
+      seenAt();
       history.replaceState(null, "", `?room=${code}`);
       if (seed) save();
       else state = load();
@@ -1946,7 +2284,9 @@
       remote.status = status;
       const dot = { live: "live", wait: "wait", error: "error", denied: "error", missing: "error" }[status] || "";
       $("syncDot").className = `dot ${room ? dot : ""}`;
-      $("syncText").textContent = !room ? "이 기기에 저장" : status === "live" ? "함께 쓰는 중" : status === "wait" ? "연결 중…" : "연결 확인 필요";
+      $("syncText").textContent = !room ? "이 기기에 저장"
+        : !navigator.onLine ? "오프라인 · 연결되면 올라가요"
+        : status === "live" ? "함께 쓰는 중" : status === "wait" ? "연결 중…" : "연결 확인 필요";
       renderShare();
     }
 
@@ -2023,13 +2363,26 @@
         return;
       }
       if (d.me) { storageSet(ME_KEY, d.me); render(); toast(`이 휴대폰은 ${memberOf(d.me).name} 것으로 정했어요`); return; }
-      if (d.gocat) { Object.assign(filter, { type: "all", who: "", cat: d.gocat, q: "", pay: "", day: 0 }); tab = "list"; render(); return; }
-      if (d.gowho) { Object.assign(filter, { type: "out", who: d.gowho, cat: "", q: "", pay: "", day: 0 }); tab = "list"; render(); return; }
+      if (d.gocat) { Object.assign(filter, { type: "all", who: "", cat: d.gocat, q: "", pay: "", tag: "", day: 0 }); tab = "list"; render(); return; }
+      if (d.gowho) { Object.assign(filter, { type: "out", who: d.gowho, cat: "", q: "", pay: "", tag: "", day: 0 }); tab = "list"; render(); return; }
       if (d.day) { filter.day = filter.day === Number(d.day) ? 0 : Number(d.day); renderList(); return; }
       if (d.ftype) { filter.type = d.ftype; renderList(); return; }
       if (d.month) { cur = d.month; if (d.smonth) statsMode = "month"; render(); return; }
       if (d.smode) { statsMode = d.smode; render(); return; }
       if (d.year) { cur = `${d.year}-${cur.slice(5)}`; render(); return; }
+      if (d.dismiss) {
+        const dis = dismissed();
+        dis[d.dismiss] = 1;
+        storageSet(DISMISS_KEY, JSON.stringify(dis));
+        render();
+        return;
+      }
+      if (d.gotag) { Object.assign(filter, { type: "all", who: "", cat: "", pay: "", tag: d.gotag, q: "", day: 0 }); tab = "list"; render(); return; }
+      if (d.delfav) {
+        const f = state.settings.favs.find(x => x.id === d.delfav);
+        if (f && confirm(`“${f.memo || catOf(f.cat).name} ${won(f.amount)}”을 자주 쓰는 내역에서 뺄까요?`)) saveSettings({ favs: state.settings.favs.filter(x => x.id !== f.id) });
+        return;
+      }
       if (d.addpay) { openPayForm(null, d.addpay); return; }
       if (d.editpay) { openPayForm(state.settings.payments.find(p => p.id === d.editpay)); return; }
       if (d.basis) { saveSettings({ basis: d.basis }); return; }
@@ -2063,7 +2416,8 @@
           break;
         }
         case "skipFixed": markFixedDone(cur); break;
-        case "clearFilter": Object.assign(filter, { type: "all", who: "", cat: "", q: "", pay: "", day: 0 }); renderList(); break;
+        case "seenOk": storageSet(seenKey(), String(Date.now())); render(); break;
+        case "clearFilter": Object.assign(filter, { type: "all", who: "", cat: "", q: "", pay: "", tag: "", day: 0 }); renderList(); break;
         case "csvMonth": exportCsv(txOf(cur), `가계부-${cur}.csv`); break;
         case "csvAll": exportCsv(allTx(), `가계부-전체-${today()}.csv`); break;
         case "backup": backup(); break;
@@ -2075,12 +2429,20 @@
       if (e.target.id === "fltWho") { filter.who = e.target.value; renderListBody(); }
       if (e.target.id === "fltCat") { filter.cat = e.target.value; renderListBody(); }
       if (e.target.id === "fltPay") { filter.pay = e.target.value; renderListBody(); }
+      if (e.target.id === "fltTag") { filter.tag = e.target.value; renderListBody(); }
     });
 
     document.addEventListener("input", e => {
       if (e.target.id === "fltQ") { filter.q = e.target.value; renderListBody(); }
     });
 
+    window.addEventListener("online", () => setShareStatus(remote.status));
+    window.addEventListener("offline", () => setShareStatus(remote.status));
+    if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+      navigator.serviceWorker.register("sw.js").catch(() => { /* 오프라인 실행만 안 될 뿐 */ });
+    }
+
+    seenAt();
     render();
     setShareStatus(room ? "wait" : "off");
     if (room) connectRoom(room, false);
