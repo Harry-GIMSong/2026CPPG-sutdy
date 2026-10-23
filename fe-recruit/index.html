@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1E7A6A">
+<meta name="apple-mobile-web-app-title" content="만자천홍 도감">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="description" content="파이어 엠블렘 만자천홍 영입 대상 조건, 주인공별 육성 방향, 외전 일정, 카이 편 동물 포획 재료 정리">
+<title>만자천홍 영입 도감</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;900&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* 레이아웃: 상단 고정 루트 선택 + 탭, 선택한 주인공 색이 전체 강조색이 된다 */
+:root{
+  --paper:#F4F2F7; --card:#FFFFFF; --ink:#221A2E; --muted:#645C71; --rule:#DAD5E3; --soft:#ECE8F2;
+  --cai:#1E7A6A; --die:#2F5496; --the:#8F6609; --led:#B0173F;
+  --cai-bg:#E2F1ED; --die-bg:#E3EAF6; --the-bg:#F5ECD8; --led-bg:#F7E1E7;
+  --accent:var(--cai); --accent-bg:var(--cai-bg); --on-accent:#fff;
+  --ok:#1E7A4A; --warn:#9A5B00;
+  --serif:"Noto Serif KR",serif; --sans:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#17121F; --card:#211A2B; --ink:#EEE9F5; --muted:#ABA3B9; --rule:#3A3148; --soft:#2A2236;
+    --cai:#5CC6B1; --die:#86A8E8; --the:#DDB257; --led:#F0708F;
+    --cai-bg:#17332D; --die-bg:#1C2640; --the-bg:#352A12; --led-bg:#3A1823;
+    --on-accent:#10131a; --ok:#6FD39C; --warn:#E7B15C; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#17121F; --card:#211A2B; --ink:#EEE9F5; --muted:#ABA3B9; --rule:#3A3148; --soft:#2A2236;
+  --cai:#5CC6B1; --die:#86A8E8; --the:#DDB257; --led:#F0708F;
+  --cai-bg:#17332D; --die-bg:#1C2640; --the-bg:#352A12; --led-bg:#3A1823;
+  --on-accent:#10131a; --ok:#6FD39C; --warn:#E7B15C; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.6}
+.wrap{max-width:1180px;margin:0 auto;padding-block:0 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:20;background:var(--paper)}
+.c{--c:var(--cai);--cb:var(--cai-bg)} .d{--c:var(--die);--cb:var(--die-bg)} .t{--c:var(--the);--cb:var(--the-bg)} .l{--c:var(--led);--cb:var(--led-bg)}
+.weave{height:14px;background:
+  repeating-linear-gradient(90deg,var(--cai) 0 10px,transparent 10px 40px),
+  repeating-linear-gradient(90deg,transparent 0 10px,var(--die) 10px 20px,transparent 20px 40px),
+  repeating-linear-gradient(90deg,transparent 0 20px,var(--the) 20px 30px,transparent 30px 40px),
+  repeating-linear-gradient(90deg,transparent 0 30px,var(--led) 30px 40px,transparent 40px);
+  -webkit-mask:repeating-linear-gradient(0deg,#000 0 3px,transparent 3px 5px);mask:repeating-linear-gradient(0deg,#000 0 3px,transparent 3px 5px)}
+header{padding-block:26px 14px}
+h1{font-family:var(--serif);font-weight:900;font-size:clamp(32px,7vw,56px);line-height:1.08;margin:0;letter-spacing:-.02em;text-wrap:balance}
+.sub{color:var(--muted);margin:8px 0 0;max-width:64ch;font-size:14px}
+
+/* 상단 고정 막대 */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:15;background:var(--paper);border-bottom:1px solid var(--rule);padding-block:8px 0}
+.routes{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.rt{font:inherit;font-weight:600;font-size:15px;min-height:46px;border:1.5px solid var(--rule);background:var(--card);color:var(--ink);border-radius:8px;cursor:pointer;padding:4px 6px;line-height:1.2}
+.rt small{display:block;font-weight:400;font-size:11px;color:var(--muted)}
+.rt[aria-pressed="true"]{background:var(--c);border-color:var(--c);color:var(--on-accent)}
+.rt[aria-pressed="true"] small{color:inherit;opacity:.9}
+.tabs{display:flex;gap:2px;overflow-x:auto;margin-top:6px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{font:inherit;font-size:14px;font-weight:500;white-space:nowrap;min-height:44px;padding:0 14px;border:0;border-bottom:3px solid transparent;background:none;color:var(--muted);cursor:pointer}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+button:focus-visible,input:focus-visible,summary:focus-visible,a:focus-visible{outline:2px solid var(--led);outline-offset:2px}
+
+h2{font-family:var(--serif);font-weight:600;font-size:23px;margin:26px 0 4px;text-wrap:balance}
+h3{font-size:16px;margin:0 0 6px}
+.note{color:var(--muted);font-size:14px;margin:0 0 12px;max-width:72ch}
+.panel[hidden]{display:none}
+.box{background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:14px 16px;min-width:0}
+.box ul,.box ol{margin:0;padding-left:20px}.box li{margin:5px 0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.sel-head{border-top:5px solid var(--accent);background:var(--card);border-radius:0 0 8px 8px;padding:14px 16px;margin-top:16px}
+.sel-head b{font-family:var(--serif);font-size:22px;color:var(--accent)}
+.sel-head p{margin:4px 0 0;color:var(--muted)}
+.pill{display:inline-block;font-size:11.5px;font-weight:600;padding:1px 8px;border-radius:999px;border:1px solid var(--rule);color:var(--muted);white-space:nowrap}
+.pill.ok{color:var(--ok);border-color:var(--ok)} .pill.warn{color:var(--warn);border-color:var(--warn)} .pill.acc{color:var(--c);border-color:var(--c)}
+.mem{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.mem .box h3{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.mem p{margin:3px 0;font-size:13.5px}.mem .lb{color:var(--muted);font-size:12px;display:block}
+.order{counter-reset:o;list-style:none;padding:0;margin:0;display:grid;gap:6px}
+.order li{counter-increment:o;display:flex;gap:10px;align-items:baseline;padding:8px 10px;background:var(--card);border:1px solid var(--rule);border-radius:8px}
+.order li::before{content:counter(o);font-weight:600;color:var(--accent);min-width:1.4em;font-variant-numeric:tabular-nums}
+.order .nm{font-weight:600}.order .sm{color:var(--muted);font-size:12.5px}
+details{background:var(--card);border:1px solid var(--rule);border-radius:8px;margin:8px 0}
+summary{cursor:pointer;min-height:44px;padding:10px 14px;font-weight:600;display:flex;align-items:center}
+details>div{padding:0 14px 12px}
+
+/* 도감 도구 */
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 4px}
+.tools input{flex:1 1 220px;min-width:0;font:inherit;min-height:44px;padding:8px 12px;border:1px solid var(--rule);border-radius:8px;background:var(--card);color:var(--ink)}
+.grp{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.grp small{color:var(--muted);font-size:12px}
+.chip{font:inherit;font-size:13.5px;min-height:38px;padding:0 13px;border-radius:999px;border:1px solid var(--rule);background:var(--card);color:var(--ink);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.count{font-size:13px;color:var(--muted);margin-left:auto}
+.tbl{overflow-x:auto;border:1px solid var(--rule);border-radius:8px;background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:1380px;font-size:13.5px}
+th{text-align:left;font-weight:600;font-size:12.5px;color:var(--muted);padding:10px;border-bottom:1px solid var(--rule);background:var(--soft);white-space:nowrap}
+th.rc{color:var(--c)}
+td{padding:10px;border-bottom:1px solid var(--rule);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td.name{position:sticky;left:0;background:var(--card);min-width:118px;box-shadow:1px 0 0 var(--rule)}
+.ko{font-weight:600;font-size:15px;display:block}
+.jp,.clan{color:var(--muted);font-size:12px;display:block}
+.tier{display:inline-block;font-size:11px;font-weight:600;border:1px solid var(--rule);border-radius:4px;padding:0 5px;margin-left:4px;vertical-align:2px}
+.tier.SS{background:var(--led);color:#fff;border-color:var(--led)}
+.tier.S{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.tier.C,.tier.D{color:var(--muted)}
+.pros{display:block}.cons{display:block;color:var(--muted);margin-top:3px}
+.nego{min-width:200px;font-size:12.5px}
+.gd{display:block;margin-top:6px;padding:6px 8px;border-radius:6px;background:var(--soft);font-size:12.5px;line-height:1.5}
+.cls{min-width:130px}.cls .path{display:block;color:var(--muted);font-size:11.5px;margin-top:2px}
+.cls .div{display:block;font-size:12px;color:var(--the);margin-top:2px}
+.dir{min-width:190px;font-size:12.5px;background:var(--accent-bg)}
+.dir b{color:var(--accent)}
+td.r{min-width:112px;font-size:13px}
+td.r .req{font-weight:600}.td.r .ext,td.r .ext{display:block;color:var(--muted);font-size:12px}
+td.r.na{color:var(--muted);opacity:.55}
+td.r.auto .req{color:var(--c)}
+td.r.rec{background:var(--cb);box-shadow:inset 3px 0 0 var(--c)}
+td.r.rec .req::after{content:" 추천";font-size:11px;color:var(--c)}
+td.r.mine{outline:2px solid var(--c);outline-offset:-2px}
+.arr{display:block;font-size:12px;color:var(--led)}
+.rl{display:none}
+.empty{padding:18px;color:var(--muted);display:none}
+tr[hidden]{display:none!important}
+.src{font-size:12.5px;color:var(--muted);margin-top:22px}.src a{color:var(--muted)}
+.gp{display:block;font-size:13px;margin:2px 0}.gp b{color:var(--c);margin-right:4px}
+td.gbest{background:var(--cb);box-shadow:inset 3px 0 0 var(--c)}
+.gdgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}
+.lord{border-top:4px solid var(--c);background:var(--card);padding:12px 14px;border-radius:0 0 6px 6px}
+.lord b{font-family:var(--serif);font-size:17px;color:var(--c)}
+.lord ol{margin:6px 0 0;padding-left:18px;font-size:13px}.lord li{margin:3px 0}
+.fnd{display:inline-block;font-size:12px;padding:0 6px;border-radius:4px;background:var(--soft);margin:1px 2px 1px 0;white-space:nowrap}
+td.sml{font-size:13px}
+.tag{font-size:12px;color:var(--muted)}
+
+@media (max-width:820px){
+  .grid2,.grid3,.gdgrid{grid-template-columns:1fr}
+  .tbl.cards{overflow:visible;border:0;background:none}
+  .tbl.cards table{min-width:0}
+  .tbl.cards thead{display:none}
+  .tbl.cards table,.tbl.cards tbody{display:block}
+  .tbl.cards tr{display:grid;grid-template-columns:1fr 1fr;background:var(--card);border:1px solid var(--rule);border-radius:8px;margin-bottom:10px;overflow:hidden}
+  .tbl.cards td{border-bottom:1px solid var(--rule)}
+  .tbl.cards td.name{position:static;box-shadow:none;grid-column:1/-1;background:var(--soft)}
+  .tbl.cards td.full{grid-column:1/-1}
+  .tbl.cards td.r{min-width:0;border-right:1px solid var(--rule)}
+  .rl{display:block;font-size:11.5px;font-weight:600;color:var(--c)}
+  .tbl.cards.late tr td:not(.name){grid-column:1/-1}
+}
+@media (max-width:480px){.rt{font-size:14px}.rt small{display:none}}
+@media (prefers-reduced-motion:no-preference){.chip,.rt{transition:background .15s}}
+
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+</style>
+</head>
+<body>
+
+<div class="weave" aria-hidden="true"></div>
+<div class="wrap">
+<header>
+  <h1>만자천홍 영입 도감</h1>
+  <p class="sub">파이어 엠블렘 만자천홍(일본어판 万紫千紅) 영입 대상 전원의 조건, 외전 일정, 카이 편 동물 포획까지 한곳에 모았습니다. 위에서 주인공을 고르면 추천 영입 순서와 육성 방향이 그 주인공에 맞춰 바뀝니다. 기준일 2026-10-23.</p>
+</header>
+
+<div class="bar">
+  <div class="routes" role="group" aria-label="주인공 선택">
+    <button class="rt c" data-route="c" aria-pressed="true">카이<small>동물 포획</small></button>
+    <button class="rt d" data-route="d" aria-pressed="false">디트리히<small>성장 최고</small></button>
+    <button class="rt t" data-route="t" aria-pressed="false">세오도라<small>HP·군단병</small></button>
+    <button class="rt l" data-route="l" aria-pressed="false">레다<small>속도·재행동</small></button>
+  </div>
+  <div class="tabs" role="tablist" aria-label="메뉴">
+    <button class="tab" role="tab" data-tab="route" aria-selected="true">내 루트</button>
+    <button class="tab" role="tab" data-tab="dex" aria-selected="false">영입 도감</button>
+    <button class="tab" role="tab" data-tab="gaiden" aria-selected="false">외전 일정</button>
+    <button class="tab" role="tab" data-tab="capture" aria-selected="false">카이 포획</button>
+    <button class="tab" role="tab" data-tab="tips" aria-selected="false">팁·비기</button>
+    <button class="tab" role="tab" data-tab="info" aria-selected="false">최신·출처</button>
+  </div>
+</div>
+
+<main>
+<section class="panel" id="p-route"><div id="routePanel"></div></section>
+
+<section class="panel" id="p-dex" hidden>
+  <div class="tools" role="search">
+    <input id="q" type="search" placeholder="이름, 소속, 스킬, 병종 검색" aria-label="캐릭터 검색">
+    <div class="grp"><small>티어</small>
+      <button class="chip tier-b" data-tier="all" aria-pressed="true">전체</button>
+      <button class="chip tier-b" data-tier="SS" aria-pressed="false">SS</button>
+      <button class="chip tier-b" data-tier="S" aria-pressed="false">S</button>
+      <button class="chip tier-b" data-tier="A" aria-pressed="false">A</button>
+      <button class="chip tier-b" data-tier="B" aria-pressed="false">B</button>
+      <button class="chip tier-b" data-tier="CD" aria-pressed="false">C·D</button>
+    </div>
+    <button class="chip" id="onlyMine" aria-pressed="false">내 루트 추천만</button>
+    <span class="count" id="count"></span>
+  </div>
+  <p class="note">표의 '육성 방향' 열은 위에서 고른 주인공 기준입니다. 테두리가 쳐진 칸이 선택한 루트의 영입 조건(지원 S, 명성 R)입니다. 모바일에서는 캐릭터별 카드로 표시됩니다.</p>
+  <h2>소속 루트에서 합류</h2>
+  <p class="note">자기 루트에서는 자동 또는 튜토리얼 스카우트(1S 2R)로 합류합니다. 다른 칸은 두 번째 이후 루트에서 다시 영입할 때의 조건입니다.</p>
+  <div class="tbl cards"><table><thead id="th1"></thead><tbody id="home"></tbody></table><div class="empty" id="e-home">조건에 맞는 캐릭터가 없습니다. 검색어나 필터를 바꿔 보세요.</div></div>
+  <h2>1부 스카우트 대상</h2>
+  <p class="note">스카우트는 각 루트 4~5장에서 해금됩니다. 명성 레벨이 가장 늦게 오르므로 명성 조건이 낮은 대상부터 준비하세요.</p>
+  <div class="tbl cards"><table><thead id="th2"></thead><tbody id="scout"></tbody></table><div class="empty" id="e-scout">조건에 맞는 캐릭터가 없습니다.</div></div>
+  <h2>2부 전쟁편, 3부 구세편에서 합류</h2>
+  <p class="note">1부에서는 스카우트할 수 없습니다. 조건을 놓치면 합류하지 않는 캐릭터가 있으니 굵은 글씨를 확인하세요.</p>
+  <div class="tbl cards late"><table style="min-width:900px"><thead><tr><th>캐릭터</th><th>개인 스킬·특징</th><th>추천 육성</th><th>합류 조건</th></tr></thead><tbody id="late"></tbody></table><div class="empty" id="e-late">조건에 맞는 캐릭터가 없습니다.</div></div>
+</section>
+
+<section class="panel" id="p-gaiden" hidden>
+  <h2>외전 진행 시기 추천</h2>
+  <p class="note">외전은 1부 9장부터 자유행동 중에 수주합니다. 날짜는 게임 내 날짜이며, 기간을 넘기면 방첨탑의 방에서 장을 다시 해야 합니다. 이동 시간도 들기 때문에 수주 가능해지는 즉시 진행하는 편이 안전합니다. 색칠된 칸이 해금 캐릭터를 가장 쉽게 영입할 수 있는 루트입니다.</p>
+  <div class="tbl"><table style="min-width:760px"><thead><tr><th>외전</th><th>루트별 수주 기간</th><th>추천 진행 시기</th></tr></thead><tbody id="gd-body"></tbody></table></div>
+  <h3 style="margin:22px 0 4px">루트별 외전 진행 순서</h3>
+  <p class="note">수주 마감이 빠른 순서입니다. 기간이 겹치면 위에서부터 처리하세요.</p>
+  <div class="gdgrid" id="gd-route"></div>
+</section>
+
+<section class="panel" id="p-capture" hidden><div id="capPanel"></div></section>
+<section class="panel" id="p-tips" hidden><div id="tipPanel"></div></section>
+<section class="panel" id="p-info" hidden><div id="infoPanel"></div></section>
+</main>
+</div>
+<script>
+/* r: 카이, 디트리히, 세오도라, 레다 순. null=불가, "A"=자동, [지원, 명성, 교섭난이도, 비고] */
+const HOME=[
+ {ko:"티아라",gd:"cai",jp:"ティアラ",clan:"히베이라의 바람",tier:"B",rec:"c",role:"회복, 마법 지원",fav:"백마법, 흑마법",skill:"군사의 재능: 아군 대상 전투 기술 사거리 +1",pro:"마력 45%, 마방 40%, 행운 50%",con:"HP 30%, 수비 20%로 물리에 약함",path:"주술사 → 프리스트 → 비숍",cls:"와이즈맨",div:"디 아바타",nego:"3000G",
+  r:["A",[3,9,"중","카이 외전"],[3,10,"중","카이 외전"],[3,8,"중","카이 외전"]]},
+ {ko:"피터르",jp:"ピーテル",clan:"히베이라의 바람",tier:"A",rec:"c",role:"궁수",fav:"활, 보병",skill:"조준 사격: 활 전투 기술 사거리 +1",pro:"기술 60%, 속도 45%로 명중과 추격 양립",con:"힘 35%, HP 40%, 수비 30%",path:"엽병 → 아처 → 스나이퍼",cls:"마스터 아처",div:"더 캘러미티",nego:"퀘스트",
+  r:["A",[3,8,"고"],[3,7,"고"],[3,10,"고"]]},
+ {ko:"울턴드",jp:"ウルタンド",clan:"히베이라의 바람",tier:"A",rec:"c",role:"창 전위형 힐러",fav:"창, 백마법",skill:"응급처치: 인접 아군 전투 후 그 아군 HP 소회복",pro:"행운 55%, 마방 45%, HP 45%. 홀리 랜서로 창과 회복 병행",con:"속도 35%. 병사 계열로 시작하면 상급까지 회복 불가",path:"주술사 → 프리스트 → 비숍",cls:"와이즈맨",div:"더 트라이던트",nego:"퀘스트",
+  r:[["A","6장"],[3,5,"고"],[3,6,"고"],[3,8,"고"]]},
+ {ko:"그자람",jp:"グザラン",clan:"무소속",tier:"S",rec:"c",role:"검 전위, 탱커 겸 딜러",fav:"검, 격투, 보병",skill:"기분파: 전투마다 명중, 회피, 필살 중 하나 +10",pro:"속도 50%, 행운 45%. 적 턴 반격으로 격파 가능. 카이 편 3장부터 합류. 한혈마 탑승 시 강화",con:"마방 20%. 백·흑마법 약점",path:"투사 → 검사 → 시도",cls:"소드마스터",div:"더 블레이드",nego:"없음",
+  r:[[1,2,"","튜토리얼"],[3,8,""],[3,8,""],[1,3,""]]},
+ {ko:"파비오",gd:"diet",jp:"ファビオ",clan:"라민 일가",tier:"S",rec:"d",role:"흑마법 딜러",fav:"흑마법",skill:"어둠 부르기: 인접 적 필살 회피 -5",pro:"마력 50%, 마방 45%로 마법 화력과 내성 모두 높음",con:"속도 35%, HP 40%, 수비 30%. 강한 마법은 횟수 제한",path:"주술사 → 샤먼 → 와테스",cls:"드루이드",div:"디 아바타",nego:"선물",
+  r:[null,"A",null,[3,9,"저","디트리히 외전 + 본선 탈락 후(11/4~)"]]},
+ {ko:"에스메랄다",jp:"エスメラルダ",clan:"라민 일가",tier:"S",rec:"d",role:"중장 탱커 겸 딜러",fav:"창 (중장)",skill:"괴력: 장비한 무기와 장비품 무게 80%",pro:"HP 55%, 힘 55%, 수비 45%. 무거운 무기도 공속 저하 적음",con:"속도 35%, 기술 35%, 마방 25%",path:"병사 → 중장보병 → 헤비 아머",cls:"포트리스",div:"디 이터널",nego:"퀘스트",
+  r:[[2,7,"고"],"A",[3,9,"고"],[3,6,"고"]]},
+ {ko:"미카엘라",jp:"ミカエラ",clan:"라민 일가",tier:"B",rec:"d",role:"도끼 전위",fav:"도끼, 활, 보병",skill:"역전의 강자: 인접한 적과 전투 시 명중 +10",pro:"HP 50%, 힘 45%, 수비 40%. 보우나이트로 활과 기병 겸용 가능",con:"기술 35%, 마방 25%, 추격 불안정",path:"투사 → 브리건드 → 워리어",cls:"배틀마스터",div:"디 이터널",nego:"3000G",
+  r:[[3,5,"중"],"A",[3,8,"중"],[3,6,"중"]]},
+ {ko:"양계",jp:"ヨーカイ",clan:"무소속",tier:"A",rec:"d",role:"도끼 쓰는 힐러 (몽크)",fav:"도끼, 백마법",skill:"파계승: 적 격파 시 (행운÷2)% 확률로 HP 전회복",pro:"HP 50%, 마방 40%로 마도사치고 튼튼함. 초반 귀한 마법 캐릭터",con:"마력 40%, 속도·기술 35%. 검·기마 약점",path:"주술사 → 프리스트 → 비숍",cls:"와이즈맨",div:"디 아바타",nego:"퀴즈",
+  r:[[2,3,"저"],[1,2,"","튜토리얼"],[3,9,"저"],[3,8,"저"]]},
+ {ko:"보나파르트",jp:"ボナパルテ",clan:"메가에라의 등불",tier:"A",rec:"t",role:"마법 딜러, 지원",fav:"검, 흑마법, 백마법",skill:"조언: 인접 아군 기술 +3",pro:"마력 45%, 기술 50%로 명중과 화력 양립. 드루이드에서도 검 사용",con:"HP 35%, 수비 30%. 1부는 세오도라 편 전용",path:"주술사 → 샤먼 → 와테스",cls:"하이 에피타프",div:"디 아바타",nego:"",
+  r:[null,null,"A",null]},
+ {ko:"토비아스",jp:"トビヤス",clan:"메가에라의 등불",tier:"B",rec:"t",role:"도끼 강타형",fav:"도끼, 기마",skill:"대기술: 전투 기술 공격 시 공격 +3",pro:"힘 60%, HP 55%, 수비 45%",con:"속도 25%, 기술 30%. 검 약점. 1부는 세오도라 편 전용",path:"투사 → 브리건드 → 워리어",cls:"그레이트나이트",div:"더 캐벌리어",nego:"",
+  r:[null,null,"A",null]},
+ {ko:"라이선더",jp:"ライサンダー",clan:"메가에라의 등불",tier:"B",rec:"t",role:"창 기병, 비행",fav:"창, 도끼, 비행, 기마",skill:"질주 공격: 선공 시 회피 +15",pro:"속도 50%, 수비 40%로 회피와 내구 균형",con:"힘 40%, 기술 35%, 마방 25%",path:"병사 → 경기병 → 바딩거",cls:"드래곤 마스터",div:"더 캐벌리어",nego:"철창 5개",
+  r:[[3,8,"고"],[3,6,"고"],"A",[3,7,"고"]]},
+ {ko:"릴리안",jp:"リリアン",clan:"메가에라의 등불",tier:"A",rec:"t",role:"궁수",fav:"활, 보병",skill:"안전책: 적이 반격할 수 없으면 명중 +10",pro:"기술 55%, 행운 50%",con:"힘 35%, 속도 40%, HP 35%",path:"엽병 → 아처 → 스나이퍼",cls:"마스터 아처",div:"더 캘러미티",nego:"5000G",
+  r:[[2,8,"중"],[2,8,"중"],"A",[2,7,"중"]]},
+ {ko:"소피아",jp:"ソフィア",clan:"다그다 신전",tier:"S",rec:"t",role:"전담 힐러",fav:"백마법",skill:"치유의 소양: 마법 회복량 +10",pro:"고정 +10 회복이 크고 와이즈맨 보너스와 중첩. 세오도라 편 5장부터 영입",con:"속도 30%, HP 35%, 수비 25%. 공격은 거의 불가",path:"주술사 → 프리스트 → 비숍",cls:"와이즈맨",div:"디 아바타",nego:"없음",
+  r:[[3,9,""],[3,9,""],[1,2,"","튜토리얼"],[3,7,""]]},
+ {ko:"버커니어",gd:"leda",jp:"バッカニア",clan:"장미의 폭풍",tier:"B",rec:"l",role:"중장 탱커",fav:"창, 도끼",skill:"수호기사의 책무: 받는 피해 항상 90%",pro:"HP 50%, 힘 50%, 수비 45%",con:"속도 25%, 마방 20%. 카이 편 영입 불가",path:"병사 → 중장보병 → 헤비 아머",cls:"포트리스",div:"디 이터널",nego:"",
+  r:[null,[3,8,"","레다 외전"],[3,8,"","레다 외전"],"A"]},
+ {ko:"시로코",jp:"シロッコ",clan:"장미의 폭풍",tier:"SS",rec:"l",role:"검과 마법 겸용 딜러",fav:"검, 흑마법, 백마법",skill:"여신의 은총: 전투 후 HP 5 회복",pro:"성장 합계 380%, 행운·기술 50%. 적 턴 반격 격파. 상대의 약한 방어 쪽을 골라 공격",con:"힘·마력 40%라 한 방은 전문 딜러보다 약함. 타 루트 교섭 '초'",path:"주술사 → 샤먼 → 와테스",cls:"하이 에피타프",div:"디 아바타",nego:"퀘스트",
+  r:[[3,9,"초"],[3,9,"초"],[1,5,"초"],"A"]},
+ {ko:"올림피아",jp:"オリンピア",clan:"장미의 폭풍",tier:"A",rec:"l",role:"힐러",fav:"백마법, 도끼",skill:"지기 싫어함: 마법 장비 중 필살 +10",pro:"마력 50%, 마방·행운 40%. 와이즈맨에서 도끼 사용",con:"속도·기술 35%. 타 루트 교섭 '초'",path:"주술사 → 프리스트 → 비숍",cls:"와이즈맨",div:"디 아바타",nego:"퀘스트 3개",
+  r:[[3,8,"초"],[3,6,"초"],[3,9,"초"],"A"]},
+ {ko:"무우",jp:"ムウ",clan:"장미의 폭풍",tier:"S",rec:"l",role:"만능 물리 딜러",fav:"검, 도끼, 격투, 백마법",skill:"성장의 조짐: 레벨업 시 능력치가 잘 오름",pro:"HP·힘·속도·기술 모두 50%. 배틀마스터 요건을 어느 무기로도 충족",con:"마방·행운 30%. 개인 스킬 외 고유 요소 없음",path:"투사 → 브리건드 → 워리어",cls:"배틀마스터",div:"디 이터널",nego:"글리르모사 3개",
+  r:[[3,9,"중"],[3,7,"중"],[3,9,"중"],"A"]},
+ {ko:"카타냐",jp:"カターニャ",clan:"무소속",tier:"S",rec:"l",role:"속도형 검사, 비병 가능",fav:"검, 창",skill:"질풍: 공속이 적보다 3 이상 높으면 명중 +20",pro:"속도 55%, 기술 50%. 적 턴 반격 격파. 레다 편 초반 합류",con:"HP·힘 35%, 수비 30%",path:"투사 → 검사 → 시도",cls:"소드마스터",div:"더 블레이드",nego:"없음",
+  r:[[3,10,""],[1,8,""],[3,7,""],[1,2,"","튜토리얼"]]}
+];
+const SCOUT=[
+ {ko:"게이츠",gd:"bert",jp:"ゲイツ",clan:"불꽃의 갈기",tier:"B",rec:"d",role:"중장 전위",fav:"창, 도끼, 기마",skill:"조력: 인접 아군 수비 +3",pro:"힘·HP 50%, 수비·기술 45%",con:"마방 25%. 1부는 디트리히 편 전용",path:"헤비 아머",cls:"그레이트나이트",div:"더 캐벌리어",nego:"",
+  r:[null,[3,10,"","베르트랑 외전 + 본선 탈락(12장~)"],null,null]},
+ {ko:"제스터",jp:"ジェスター",clan:"불꽃의 갈기",tier:"B",rec:"d",role:"회피형 검·궁",fav:"검, 활, 보병",skill:"순전: '교체' 사용 후 수비 +3",pro:"속도 60%로 회피와 추격 우수",con:"힘 35%, 마방 25%",path:"아처 → 스나이퍼",cls:"섀도 시커",div:"더 캘러미티",nego:"퀘스트 3개",
+  r:[[3,10,"초"],[3,6,"초"],[3,9,"초"],[3,10,"초"]]},
+ {ko:"골라이어스",jp:"ゴライアス",clan:"불꽃의 갈기",tier:"A",rec:"d",role:"중장 탱커",fav:"도끼",skill:"중량급 전사: 체격 +5 (기병·비행 불가)",pro:"힘 60%, 수비 50%, HP 55%로 받아치는 벽",con:"속도 15%, 마방 20%",path:"중장보병 → 헤비 아머",cls:"포트리스",div:"디 이터널",nego:"거인 고기 3개",
+  r:[[3,7,"고"],[3,6,"고"],[3,9,"고"],[3,10,"고"]]},
+ {ko:"단테",jp:"ダンテ",clan:"불꽃의 갈기",tier:"B",rec:"t",role:"회복, 마법 딜러",fav:"백마법, 흑마법",skill:"전장의 연출: 2칸 내 아군 전투 시 (매력÷2)% 확률로 필살 회피 +10",pro:"마력 45%, 마방 40%, 행운 45%. 와테스로 마법 딜러 가능",con:"HP 30%, 수비 20%로 물리에 매우 약함",path:"샤먼 → 와테스",cls:"와이즈맨",div:"디 아바타",nego:"8000G",
+  r:[[3,10,"고"],[2,8,"고"],[3,6,"고"],[3,10,"고"]]},
+ {ko:"우술라",gd:"tali",jp:"ウーシュラ",clan:"섬백의 기만",tier:"B",rec:"d",role:"회피형, 유틸리티",fav:"검, 활",skill:"상회의 지배인: 본인과 2칸 내 아군이 도구 주머니 사용",pro:"속도·기술 50%. 디 압사라스로 재행동 역할 가능",con:"힘·마력 35%. 레다 편 영입 불가",path:"아처 → 스나이퍼",cls:"섀도 시커",div:"디 압사라스",nego:"'예' 3회",
+  r:[[3,10,"저","타리문 외전"],[3,7,"저","타리문 외전"],[3,9,"저","타리문 외전"],null]},
+ {ko:"루루디아",jp:"ルルディヤー",clan:"섬백의 기만",tier:"B",rec:"tl",role:"속도형 검사",fav:"검, 보병",skill:"매: 선공 시 공속 +3",pro:"속도 55%로 추격이 쉬움",con:"힘 35%, 마방 20%, 성장 합계 305%",path:"검사 → 시도",cls:"소드마스터",div:"더 블레이드",nego:"퀘스트",
+  r:[[3,9,"고"],[3,9,"고"],[3,7,"고"],[3,7,"고"]]},
+ {ko:"시몬",jp:"シモン",clan:"섬백의 기만",tier:"A",rec:"l",role:"생존형 전위",fav:"검, 도끼, 보병",skill:"죽을 뻔한: HP 0이 될 피해를 받으면 행운% 확률로 HP 1 생존",pro:"HP·힘·행운 50%. 교섭 쉬움",con:"속도 35%, 마방 25%",path:"브리건드 → 워리어",cls:"배틀마스터",div:"디 이터널",nego:"동전 뒷면",
+  r:[[3,8,"저"],[3,7,"저"],[3,7,"저"],[3,6,"저"]]},
+ {ko:"피아나",jp:"フィアナ",clan:"섬백의 기만",tier:"C",rec:"l",role:"힐러",fav:"백마법, 흑마법",skill:"숙광: 회복 시 행운% 확률로 마법 사용 횟수 미소모",pro:"마력 55%로 전체 최고, 마방 45%",con:"HP 30%, 수비 20%, 속도 30%, 행운 25%",path:"프리스트 → 비숍",cls:"와이즈맨",div:"디 아바타",nego:"3000G",
+  r:[[3,8,"중"],[3,7,"중"],[3,9,"중"],[3,5,"중"]]},
+ {ko:"디에고",gd:"orch",jp:"ディエゴ",clan:"리나리아의 아침 이슬",tier:"A",rec:"t",role:"검·궁 명중형",fav:"검, 활, 보병",skill:"용심봉: 인접 아군 전투 시 5% 확률로 그 아군 추격 방지",pro:"기술 60%, 속도 45%",con:"힘 40%, 마방 20%. 스킬 발동률 낮음",path:"시도",cls:"소드마스터",div:"더 블레이드",nego:"",
+  r:[[3,10,"","오르헬 외전"],[3,9,"","오르헬 외전"],[2,8,"","오르헬 외전"],[3,8,"","오르헬 외전"]]},
+ {ko:"로레타",jp:"ロレッタ",clan:"리나리아의 아침 이슬",tier:"A",rec:"tl",role:"회피형 검·창",fav:"검, 창",skill:"마음의 여유: HP 절반 이상이면 회피 +10",pro:"속도 55%, 마방 40%",con:"HP·힘 35%, 수비 30%로 한 번 맞으면 무너지기 쉬움",path:"검사 → 시도",cls:"소드마스터",div:"더 블레이드",nego:"철검 3개",
+  r:[[3,7,"중"],[3,9,"중"],[3,5,"중"],[3,5,"중"]]},
+ {ko:"세테스",jp:"セテス",clan:"리나리아의 아침 이슬",tier:"C",rec:"ct",role:"기병 전위",fav:"창, 도끼, 지휘",skill:"임전태세: 적 턴 첫 전투에서 50% 확률로 선공",pro:"힘·기술 45%, 수비 40%로 고른 성장",con:"특출난 능력 없음. 디트리히 편 영입 불가",path:"경기병 → 바딩거",cls:"오리하르디아",div:"더 캐벌리어",nego:"퀘스트",
+  r:[[3,6,"고"],null,[3,6,"고"],[3,10,"고"]]},
+ {ko:"리네",jp:"ニネ",clan:"리나리아의 아침 이슬",tier:"S",rec:"ct",role:"대(對)마법, 창 힐러",fav:"창, 백마법",skill:"정령의 목소리: 적이 마법이면 명중·회피 +10",pro:"마방 45%, 행운 50%, 힘 45%. 홀리 랜서로 창과 회복 병행",con:"속도·마력 35%",path:"프리스트 → 비숍",cls:"와이즈맨 (홀리 랜서도 추천)",div:"더 트라이던트",nego:"물고기 1마리",
+  r:[[3,6,"고"],[3,8,"고"],[3,6,"고"],[3,8,"고"]]},
+ {ko:"나타",jp:"ナジャ",clan:"백아의 신부단",tier:"S",rec:"t",role:"물리 딜러",fav:"검, 격투, 보병",skill:"선수필승: 선공 시 50% 확률로 공격 +3",pro:"힘 55%, 기술 50%, 속도 45%. 한혈마 탑승 시 강화",con:"마방 25%. 모든 루트 교섭 '고'",path:"검사 → 시도",cls:"소드마스터",div:"더 블레이드",nego:"사막벌레 고기 3개",
+  r:[[3,6,"고"],[3,10,"고"],[2,6,"고"],[3,9,"고"]]},
+ {ko:"사란",gd:"anat",jp:"サラン",clan:"백아의 신부단",tier:"B",rec:"l",role:"힐러",fav:"백마법, 창",skill:"붙잡는 역: '끌어당기기' 사용 후 보조 마법 사용 가능",pro:"마력·마방 45%, 기술 50%",con:"HP 35%, 힘·수비 30%. 카이·세오도라 편 불가",path:"비숍",cls:"와이즈맨",div:"더 트라이던트",nego:"퀴즈",
+  r:[null,[3,10,"저","아나톨리아 외전"],null,[3,8,"저","아나톨리아 외전"]]},
+ {ko:"대도",jp:"ダイトウ",clan:"백아의 신부단",tier:"C",rec:"tl",role:"중장 강타형",fav:"도끼, 중장",skill:"한판승부: 서로 추격할 수 없으면 공격 +5",pro:"힘 55%, 수비 45%, HP 50%",con:"속도 30%, 마방 20%, 행운 25%",path:"중장보병 → 헤비 아머",cls:"포트리스",div:"디 이터널",nego:"코타르 가르 2개",
+  r:[[3,7,"중"],[3,10,"중"],[2,5,"중"],[2,5,"중"]]},
+ {ko:"하르빈",jp:"ハルヴィン",clan:"백아의 신부단",tier:"A",rec:"c",role:"궁수, 기마 궁",fav:"활, 기마",skill:"순응: 전투 후 명중 +2 (최대 +30, 맵 종료까지)",pro:"기술 60%, 속도 45%. 보우나이트로 기동력까지",con:"힘·HP 35%, 수비 30%",path:"아처 → 포레스트 나이트",cls:"보우나이트",div:"더 캘러미티",nego:"대추야자 10개",
+  r:[[3,5,"중"],[3,9,"중"],[3,7,"중"],[3,7,"중"]]},
+ {ko:"녹투라",jp:"ノクチュラ",clan:"무소속",tier:"A",rec:"t",role:"격투·도끼 전위",fav:"도끼, 격투, 보병",skill:"집중: 전투 후 회피 +3",pro:"HP 50%, 힘·속도 45%, 수비 40%",con:"마방 20%. 스킬 효과 작음",path:"투사 → 브리건드 → 워리어",cls:"배틀마스터",div:"디 이터널",nego:"없음",
+  r:[[1,4,""],[1,6,""],[1,3,""],[3,8,""]]},
+ {ko:"이오",jp:"イオ",clan:"무소속",tier:"D",rec:"d",role:"기병",fav:"창, 도끼, 기마",skill:"애마와의 연계: 기병으로 선공 시 방어 +3, 필살 회피 +30",pro:"기병 요건을 모두 특기로 충족",con:"힘 40%, 속도 35%, 마방 25%",path:"병사 → 경기병 → 바딩거",cls:"오리하르디아",div:"더 캐벌리어",nego:"골드",
+  r:[[3,10,"중","4000G"],[2,3,"중","800G"],[3,10,"중","4000G"],[1,6,"중","1500G"]]},
+ {ko:"누디누",jp:"ヌディーヌ",clan:"무소속",tier:"D",rec:"d",role:"기갑타병 (기병)",fav:"도끼, 비행, 기마",skill:"강행돌파: 기병일 때 적이 있는 칸 통과 이동",pro:"속도 45%, 기병 계열로 진행하기 쉬움",con:"비행 병종이면 스킬 미발동. 힘 40%, 수비 30%",path:"기갑타병 → 바딩거",cls:"오리하르디아",div:"더 캐벌리어",nego:"도끼",
+  r:[[1,6,"중","청동 도끼 2"],[2,5,"중","청동 도끼 2"],[3,5,"중","철 도끼 3"],[3,10,"중","철 도끼 3"]]},
+ {ko:"마지데",jp:"マジーデ",clan:"무소속",tier:"C",rec:"c",role:"도끼 탱커",fav:"도끼, 격투",skill:"난폭한 도끼: 도끼 장비 중 힘 +3",pro:"HP 65%, 힘 50%. 수비가 불안한 카이 편의 순수 탱커",con:"속도 20%, 마방 10%. 성장 합계 전체 최저",path:"브리건드 → 워리어",cls:"배틀마스터",div:"디 이터널",nego:"질문",
+  r:[[2,5,"저"],[3,8,"저"],[3,8,"저"],[3,9,"저"]]},
+ {ko:"자코네",jp:"ザーコネ",clan:"가이아 여단",tier:"A",rec:"t",role:"도끼 명중형",fav:"검, 도끼",skill:"도끼 칼: 도끼 장비 중 명중 +10",pro:"기술 60%. 교섭 쉬움 (10G까지 인하 가능)",con:"힘 30%, 속도 35%로 화력 부족",path:"브리건드 → 워리어",cls:"배틀마스터",div:"디 이터널",nego:"협상",
+  r:[[3,8,"저"],[3,7,"저"],[1,4,"저"],[2,5,"저"]]},
+ {ko:"밴디츠",jp:"ベンディッツ",clan:"뇌운기사단",tier:"A",rec:"d",role:"전차 궁병",fav:"활, 기마",skill:"차상 전투술: 전차병일 때 명중 +20",pro:"기술·HP 50%. 전차병 전용 '돌진'으로 적을 유린",con:"스킬은 중급 전차병 한정, 회피 불가, 이동력 5",path:"전차병 → 포레스트 나이트",cls:"보우나이트",div:"더 캘러미티",nego:"없음",arr:"4/11경 등장",
+  r:[[3,9,""],[2,7,""],[1,8,""],[3,7,""]]},
+ {ko:"키로이카",jp:"キロイカ",clan:"흑조 해적단",tier:"A",rec:"dl",role:"궁수",fav:"활",skill:"폭학: 적이 상태이상이면 공격 +3, 필살 +10",pro:"속도 55%, 기술 50%, HP 55%. 부족하기 쉬운 궁병",con:"특기가 활뿐, 마방 15%",path:"아처 → 스나이퍼",cls:"마스터 아처",div:"더 캘러미티",nego:"정수",arr:"6장경부터",
+  r:[[3,8,"중","정수 8"],[1,4,"중","정수 3"],[3,10,"중","정수 8"],[1,4,"중","정수 3"]]},
+ {ko:"자스민",jp:"ジャスミン",clan:"팔마의 비",tier:"C",rec:"l",role:"반격형 중장",fav:"도끼, 창, 중장",skill:"숙련 반격술: 후공 시 명중 +20",pro:"HP 50%, 수비·기술 45%",con:"힘 40%, 속도 30%, 마방 25%",path:"중장보병 → 헤비 아머",cls:"포트리스",div:"디 이터널",nego:"골드",arr:"6장 이후",
+  r:[[1,8,"중","2000G"],[3,9,"중","5000G"],[3,8,"중","5000G"],[2,4,"중","500G"]]},
+ {ko:"알렉산드라",jp:"アレキサンドラ",clan:"테루스 백은기사단",tier:"A",rec:"t",role:"비병 검·창",fav:"검, 창, 비행",skill:"백은의 소녀: 인접 아군 1명당 명중·회피 +5",pro:"속도 55%, 행운 50%, 마방 40%",con:"HP 30%, 힘 35%, 수비 30%",path:"검사 → 시도",cls:"성천익병",div:"디 압사라스",nego:"없음",arr:"7장 이후",
+  r:[[2,7,""],[3,8,""],[1,6,""],[3,10,""]]},
+ {ko:"누조",jp:"ヌッツォ",clan:"할 하리 족",tier:"A",rec:"t",role:"궁수, 비행 킬러",fav:"검, 활",skill:"부족의 비기: 공격이 유효·특효면 공격 +3",pro:"힘 50%, 속도 55%, HP 50%. 한혈마 탑승 시 강화",con:"수비 20%, 마방 15%",path:"아처 → 스나이퍼",cls:"마스터 아처",div:"더 캘러미티",nego:"철궁",arr:"6장 이후",
+  r:[[3,6,"중","철궁 3"],[1,9,"중","철궁 2"],[1,6,"중","철궁 3"],[3,9,"중","철궁 3"]]},
+ {ko:"이니오니",jp:"イニオニ",clan:"브라간사 동포단",tier:"S",rec:"l",role:"강궁수",fav:"활, 도끼",skill:"강궁 사용: 활 장비 중 힘 +3",pro:"힘 50%, 수비 40%로 궁수치고 화력과 내구 있음",con:"속도 35%. 1부 7장 이후 합류",path:"스나이퍼",cls:"마스터 아처",div:"더 캘러미티",nego:"골드",arr:"7장 이후",
+  r:[[3,8,"중","6000G"],[3,8,"중","6000G"],[1,9,"중","4000G"],[1,7,"중","3000G"]]},
+ {ko:"페페",gd:"bert",jp:"ペペ",clan:"브리기트군",tier:"B",rec:"t",role:"회피형 궁수",fav:"검, 활, 보병",skill:"사냥꾼의 매복: 적 턴에 다친 적과 전투 시 30% 확률로 선공",pro:"속도 60%, 행운 45%",con:"HP·힘 30%. 레다 편 영입 불가",path:"아처 → 스나이퍼",cls:"마스터 아처",div:"더 캘러미티",nego:"",
+  r:[[1,9,"","베르트랑 외전"],[3,8,"","베르트랑 외전"],[2,7,"","베르트랑 외전"],null]}
+];
+const LATE=[
+ {ko:"구세주 (이스마르)",jp:"救世主",tier:"SS",skill:"구세의 빛: 2칸 내 적의 '명부의 가호' 무효. 성장 합계 390%, 창·지휘 특기",cls:"바딩거 → 홀리 랜서 / 더 트라이던트",join:"프롤로그 합류. 1부 네 루트에서는 사용 불가, 3부 구세편에서 사용"},
+ {ko:"오르헬",gd:"orch",jp:"オルヘル",tier:"SS",skill:"견뢰견고: 수비 +5, 중장 취급. 힘·수비·마방 60%. 속도 10%, 기술 20%는 전체 최저",cls:"헤비 아머 → 포트리스 / 디 이터널",join:"3부 1구분. <b>1부에서 오르헬 외전 클리어 필수</b>"},
+ {ko:"타리문",gd:"tali",jp:"タリムーン",tier:"S",skill:"모험왕의 운: 행운 +3. 행운 60%는 전체 최고. 약화 블레이즈 아츠",cls:"와테스 → 하이 에피타프 / 디 아바타",join:"3부 1구분. <b>1부에서 타리문 외전 클리어 필수</b>"},
+ {ko:"아나톨리아",gd:"anat",jp:"アナトリア",tier:"S",skill:"유기교: 회피 +3. 마력·속도 50%로 추격 가능한 마법 딜러",cls:"와테스 → 드루이드 / 디 아바타",join:"3부 1구분. <b>1부에서 아나톨리아 외전 클리어 필수</b>"},
+ {ko:"베르트랑",gd:"bert",jp:"ベルトラン",tier:"S",skill:"개장류: 5% 확률로 공속 무관 추격. 힘 55%, 기술 50%. 마방 20%",cls:"워리어 → 배틀마스터 / 디 이터널",join:"3부 1구분. <b>1부에서 베르트랑 외전 클리어 필수</b>"},
+ {ko:"키릭",jp:"キリーク",tier:"A",skill:"냉정침착: 후공 시 공속 +3, 회피 +10. 속도 60%, 검·기마 특기",cls:"오리하르디아 / 더 캐벌리어",join:"2부 2장. <b>디트리히·레다 편 서브퀘스트 '죽은 누이의 장신구' 필요, 전쟁편 스킵 시 불가</b>"},
+ {ko:"네이선",jp:"ネイサン",tier:"C",skill:"저돌맹진: 선공 시 공속 +3, 명중 +10. 힘·기술 60%, 속도 25%",cls:"그레이트나이트 / 더 캐벌리어",join:"2부 3장. <b>키릭으로 네이선을 격파</b>, 전쟁편 스킵 시 불가"},
+ {ko:"센트리온",jp:"セントリオン",tier:"B",skill:"강옥의 수호: 적 턴 첫 전투 피해 반감 (확정 발동). 수비·기술 50%",cls:"헤비 아머 → 포트리스 / 디 이터널",join:"3부 2구분. 서브퀘스트 '센트리온의 구원 요청' 클리어 후 다그시온에서 대화"},
+ {ko:"홍화",jp:"コウカ",tier:"B",skill:"주명: 마법 장비 중 명중 +10. 마력·속도·기술·마방 45%",cls:"드루이드 / 디 아바타",join:"프롤로그 합류, 3부에서 사용"},
+ {ko:"트로이아",jp:"トロイア",tier:"B",skill:"운수: 건틀릿 장비 중 명중 +10. 격투·흑·백마법 특기",cls:"드루이드 / 디 아바타",join:"프롤로그 합류, 3부에서 사용"},
+ {ko:"아스완",jp:"アスワン",tier:"C",skill:"궁희: 활 장비 중 명중 +20. 성장 합계 270%",cls:"마스터 아처 / 더 캘러미티",join:"3부 5구분 시작 시 자동 합류"},
+ {ko:"타호니아",jp:"タホウニア",tier:"D",skill:"퓌톤의 방식: 건틀릿 전투 기술 사용 시 15% 확률로 추격. HP 65%",cls:"배틀마스터 / 디 이터널",join:"3부 5구분 시작 시 자동 합류"},
+ {ko:"클라프카",jp:"クラプカ",tier:"D",skill:"은의 정신: 전투 후 수비% 확률로 수비 +1 누적 (최대 +10). 한국명 미확인",cls:"가디언 고정 (전직 불가)",join:"3부 6구분. <b>5구분 전투에서 생존</b>, 세오도라 편 클리어도 조건일 가능성"}
+];
+
+
+const GD={
+ leda:{name:"레다 외전",unlock:"버커니어",p:{d:"9장 9/2~9/8",t:"10장 9/2~9/8"},best:"d",rec:"디트리히 9장 또는 세오도라 10장. 기간이 7일뿐이라 9/2 시작 즉시 진행"},
+ bert:{name:"베르트랑 외전",unlock:"페페, 게이츠, 3부 베르트랑",p:{c:"10장 9/17~9/25",d:"9장 9/17 당일만",t:"11장 9/17~9/25"},best:"t",rec:"페페는 세오도라 11장 9/17~9/25에 여유 있게. 게이츠가 필요하면 디트리히 9장 9/17 당일에 반드시 수주"},
+ tali:{name:"타리문 외전",unlock:"우술라, 3부 타리문",p:{c:"10장 9/17~9/22 또는 10/1~10/12",d:"9장 9/17~9/19 또는 10/1~10/12",t:"11장 9/17~9/22 또는 10/1~10/12"},best:"d",rec:"우술라가 가장 쉬운 디트리히 루트(3S 7R)에서. 9/17은 베르트랑 외전에 쓰고 타리문은 2차 기간 10/1~10/12에 진행"},
+ anat:{name:"아나톨리아 외전",unlock:"사란, 3부 아나톨리아",p:{d:"11장 10/5~10/17",l:"10장 10/5~10/17"},best:"l",rec:"레다 10장 10/5 직후. 사란이 레다 루트에서 3S 8R로 가장 쉬움"},
+ cai:{name:"카이 외전",unlock:"티아라 (카이 외 루트)",p:{d:"11장 10/16~10/22",t:"12장 10/16~10/22",l:"11장 10/16~10/22"},best:"l",rec:"레다 11장 10/16 직후. 같은 시기 외전 가운데 기간이 가장 짧아 최우선"},
+ diet:{name:"디트리히 외전",unlock:"파비오 (레다 루트)",p:{t:"12장 10/16~11/1",l:"11장 10/16~11/1"},best:"l",rec:"레다 11장에서 카이, 오르헬 외전 다음 순서로 11/1 전에 클리어. 파비오 스카우트는 본선 탈락 후 11/4부터"},
+ orch:{name:"오르헬 외전",unlock:"디에고, 3부 오르헬",p:{c:"11장 10/18~10/19 (이틀)",d:"11장 10/18~10/27",t:"12장 10/18~10/27",l:"11장 10/18~10/27"},best:"t",rec:"디에고가 가장 쉬운 세오도라 12장 10/18 이후. 카이 루트는 이틀뿐이라 비추천"},
+ theo:{name:"세오도라 외전",unlock:"없음 (보상 전용)",p:{d:"9장 9/3~9/15"},best:"d",rec:"레다 외전(9/2~9/8)을 먼저 끝낸 뒤 9/15 전에 진행"},
+ anna:{name:"안나 외전",unlock:"없음 (보상 전용)",p:{c:"10장 9/24~10/5",d:"10장 9/29~10/5",t:"11장 9/24~10/5"},best:"",rec:"베르트랑, 타리문 외전을 마친 뒤 10/5 전에 진행"}
+};
+const ROUTE_PLAN={
+ c:["베르트랑 외전 (10장 9/17~9/25)","타리문 외전 (9/17~9/22 또는 10/1~10/12)","안나 외전 (9/24~10/5)","오르헬 외전 (11장 10/18~10/19, 이틀뿐)"],
+ d:["레다 외전 (9장 9/2~9/8)","세오도라 외전 (9/3~9/15)","베르트랑 외전 (9/17 당일만, 게이츠용)","타리문 외전 (2차 10/1~10/12, 우술라용)","안나 외전 (10장 9/29~10/5)","아나톨리아 외전 (11장 10/5~10/17)","카이 외전 (10/16~10/22)","오르헬 외전 (10/18~10/27)"],
+ t:["레다 외전 (10장 9/2~9/8)","베르트랑 외전 (11장 9/17~9/25, 페페용)","타리문 외전 (9/17~9/22 또는 10/1~10/12)","안나 외전 (9/24~10/5)","카이 외전 (12장 10/16~10/22)","오르헬 외전 (10/18~10/27, 디에고용)","디트리히 외전 (10/16~11/1)"],
+ l:["아나톨리아 외전 (10장 10/5~10/17, 사란용)","카이 외전 (11장 10/16~10/22, 티아라용)","오르헬 외전 (10/18~10/27)","디트리히 외전 (~11/1, 파비오용)"]
+};
+
+/* ===== 공통 ===== */
+const LK=["c","d","t","l"], LN={c:"카이",d:"디트리히",t:"세오도라",l:"레다"};
+const esc=s=>String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+const $=id=>document.getElementById(id);
+let route="c", tier="all", onlyMine=false, curTab="route";
+const store={get(k,d){try{return localStorage.getItem(k)||d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+
+/* ===== 루트 정보 ===== */
+const LORD={
+ c:{name:"카이",line:"이동력 +1, 블레이즈 아츠가 모두 마력 의존. 5장부터 동물 포획·사육이 열려 보병도 기승 유닛으로 바꿀 수 있습니다.",
+  pick:"우선 영입: 그자람, 나타, 누조, 마지데, 리네",
+  build:[
+   "<b>동물 포획은 5장부터.</b> 맛이 맞는 유인 재료를 놓아야 목표 동물이 나옵니다. '카이 포획' 탭에 맛별 실제 재료를 정리했습니다.",
+   "<b>힐러·마법</b>(티아라, 울턴드, 소피아, 리네, 올림피아 등)은 모노케로스에 태워 트루바두르로. 행운·마방이 오르고 전투 후 회복이 붙습니다(Game8).",
+   "<b>물리 전위·궁수</b>는 한혈마 + 포레스트 나이트 또는 경기병이 기본. 한혈마는 힘·수비가 오르고 수비 성장률이 높습니다(Game8).",
+   "<b>중장·기갑타병</b>은 붉은깃 메가니우스(힘형), 비행 마법은 마지니우스 계열, 비행 물리는 야생 페가수스·팔콘·바우를 씁니다.",
+   "같은 종이라도 <b>개체마다 기승 스킬이 다르니</b> 마구간에서 확인하고, 마음에 안 들면 같은 장소에서 다시 포획합니다.",
+   "<b>우호 레벨은 캐릭터×동물 조합별</b>로 관리되며 출전만으로도 오릅니다. 최대 5에서 스킬이 열립니다(AppMedia).",
+   "마력 성장률 높은 캐릭터를 우선 키우세요. 블레이즈 아츠가 마력 의존이라 마법형 육성과 궁합이 좋습니다."]},
+ d:{name:"디트리히",line:"성장률 합계 415%로 전체 최고. 초기 동료 에스메랄다, 파비오, 미카엘라. 게이츠는 이 루트 전용입니다.",
+  pick:"우선 영입: 키로이카(궁병), 피아나(힐러)",
+  build:[
+   "<b>궁병과 힐러가 얇은 루트</b>입니다. 키로이카(6장경), 피아나, 양계를 먼저 확보하세요.",
+   "초기 동료는 중장 탱커(에스메랄다), 흑마법(파비오), 도끼(미카엘라) 중심이라 <b>원거리·회복 보강</b>이 영입 목표의 1순위입니다.",
+   "게이츠는 이 루트 전용이며 베르트랑 외전을 <b>9/17 당일</b>에 수주해야 합니다.",
+   "고유 요소는 刃鳴り(칼날 소리)와 도전장(挑戦状)이 확인되지만, 세부 효과는 이번 정리에서 확인하지 못했습니다.",
+   "주인공 자체가 성장률이 높으니 레벨 보정이 필요한 서브 캐릭터를 키우기보다, 부족한 병종을 영입으로 메우는 편이 효율적입니다. (추정)"]},
+ t:{name:"세오도라",line:"HP 성장 70% 최고, 30% 확률 피해 반감. 초기 동료는 보나파르트, 토비아스, 라이선더, 릴리안. 소피아는 5장부터 영입.",
+  pick:"우선 영입: 소피아(힐러), 녹투라",
+  build:[
+   "<b>소피아가 전담 힐러.</b> 튜토리얼 스카우트(1S 2R)로 일찍 합류하며 치유량 +10이 큰 힘이 됩니다.",
+   "영입 조건이 낮은 캐릭터가 많아(릴리안, 라이선더 자동 합류 등) <b>스카우트 중심 확장</b>에 유리합니다.",
+   "자신이 단단하므로 앞줄에 세워 적 공격을 받아내고, 뒤에서 궁수·마법으로 마무리하는 구성을 권합니다. (추정)",
+   "고유 요소는 군단병(軍団兵)과 전비 증강(戦備増強)이 확인되지만, 세부 효과는 이번 정리에서 확인하지 못했습니다.",
+   "클라프카는 세오도라 편 클리어가 조건일 가능성이 있습니다(미확정)."]},
+ l:{name:"레다",line:"속도 65% 최고, '천녀의 노래'로 아군 재행동. 초기 동료는 버커니어, 시로코, 올림피아, 무우로 가장 두텁고, 카타냐가 튜토리얼 스카우트입니다.",
+  pick:"우선 영입: 카타냐(기동력 보충), 사란(아나톨리아 외전)",
+  build:[
+   "<b>초기 전력이 가장 좋아</b> 영입 없이도 1부 전반이 안정적입니다. 시로코(SS)와 무우를 주력으로 키우세요.",
+   "재행동(천녀의 노래)으로 <b>한 번 더 움직여야 가치가 큰 유닛</b>(높은 공격력, 이동 후 힐)을 곁에 둡니다. (추정)",
+   "카타냐 같은 기동력 유닛과 궁수(키로이카, 이니오니)를 보강하세요.",
+   "고유 요소는 흥행(興行)과 주가(呪歌)가 확인되지만, 세부 효과는 이번 정리에서 확인하지 못했습니다.",
+   "아나톨리아 외전(10/5~), 카이 외전(10/16~) 순서로 진행하면 사란·티아라를 쉽게 영입합니다."]}
+};
+
+/* ===== 카이 포획 데이터 ===== */
+const FOOD={veg:"야채",fish:"생선",meat:"고기"}, TASTE={sw:"단맛",sp:"매운맛",bt:"쓴맛",ra:"진미"};
+const TJP={sw:"甘味",sp:"辛味",bt:"苦味",ra:"珍味"}, FJP={veg:"野菜",fish:"魚",meat:"肉"};
+const ANI=[
+ {k:"horse",ko:"야생마",jp:"野生の馬",g:"말",f:"veg",t:"sw",w:"陽だまり峠, 落ち日の道, オレアンス平原, ダイモス台地(자료에 따라 다름)"},
+ {k:"hanketsu",ko:"한혈마",jp:"汗血馬",g:"말",f:"veg",t:"sp",w:"落ち日の道 (희귀)"},
+ {k:"mono",ko:"모노케로스",jp:"モノケロース",g:"말",f:"veg",t:"ra",w:"オレアンス平原 (희귀)"},
+ {k:"kuro",ko:"흑마",jp:"黒馬",g:"말",f:"veg",t:"bt",w:"ダイモス台地 (3부 희귀)"},
+ {k:"orn",ko:"야생 오르니우스",jp:"野生のオルニウス",g:"비행(낙타)",f:"fish",t:"sw",w:"エリッサ峠, ファロの森, 雀躍の辻, ウラノス山"},
+ {k:"worn",ko:"흰깃 오르니우스",jp:"白羽のオルニウス",g:"비행(낙타)",f:"fish",t:"sw",w:"ファロの森 (희귀)"},
+ {k:"mega",ko:"메가니우스",jp:"メガニウス",g:"비행(낙타)",f:"fish",t:"sp",w:"アクシオン渓谷, 雀躍の辻, ウラノス山"},
+ {k:"rmega",ko:"붉은깃 메가니우스",jp:"赤羽のメガニウス",g:"비행(낙타)",f:"fish",t:"sp",w:"アクシオン渓谷 (희귀)"},
+ {k:"maji",ko:"마지니우스",jp:"マジニウス",g:"비행(낙타)",f:"fish",t:"bt",w:"首狩り岩 (+砂漠の入口, タルボス平原 일부 자료)"},
+ {k:"bmaji",ko:"검은깃 마지니우스",jp:"黒羽のマジニウス",g:"비행(낙타)",f:"fish",t:"bt",w:"首狩り岩 (희귀)"},
+ {k:"peg",ko:"야생 페가수스",jp:"野生のペガサス",g:"천마",f:"veg",t:"sw",w:"天馬岩, 黒翼の谷, 巨鳥の頸"},
+ {k:"dpeg",ko:"다크 페가수스",jp:"ダークペガサス",g:"천마",f:"veg",t:"bt",w:"黒翼の谷 (희귀)",x:"사이트별로 쓴맛(GameWith)과 매운맛(Game8)이 갈립니다."},
+ {k:"falcon",ko:"팔콘",jp:"ファルコン",g:"천마",f:"veg",t:"ra",w:"天馬岩, 巨鳥の頸, 風止まずの浜"},
+ {k:"rfalcon",ko:"레드 팔콘",jp:"レッドファルコン",g:"천마",f:"veg",t:"sp",w:"風止まずの浜 (3부 희귀)"},
+ {k:"bau",ko:"야생 바우",jp:"野生のバウ",g:"비룡",f:"meat",t:"sw",w:"竜呼びの岬 (+ヤシロ砦 등 일부 자료)"},
+ {k:"rbau",ko:"레드 바우",jp:"レッドバウ",g:"비룡",f:"meat",t:"sp",w:"ヤシロ砦 (3부 희귀)"},
+ {k:"bbau",ko:"블랙 바우",jp:"ブラックバウ",g:"비룡",f:"meat",t:"bt",w:"戦士の道, シデムの谷 (3부 희귀)"},
+ {k:"rosi",ko:"로시난테",jp:"ロシナン",g:"말",f:"veg",t:"sw",w:"이오 스카우트 시 합류",nc:1},
+ {k:"bouq",ko:"부케팔라스",jp:"ブーケパラス",g:"천마",f:"veg",t:"sw",w:"알렉산드라 스카우트 시 합류",nc:1},
+ {k:"sala",ko:"살라미스 전상",jp:"サラミス戦象",g:"코끼리",f:"veg",t:"ra",w:"서브퀘스트 '戦象乗りの絆' 보상",nc:1}
+];
+const ANI_BY=Object.fromEntries(ANI.map(a=>[a.k,a]));
+/* 유인 재료. s=상점 구매 가능, 나머지는 탐색·격파·퀘스트 (GameWith 食材一覧) */
+const BAIT={
+ "veg|sw":{shop:[["テフノミ","테푸노미","30G"],["デーツ","대추야자","30G"],["サバクキビ","사막기장","30G"],["ギンジ","긴지","50G"],["セムイモ","세무이모","50G"],["ソルギ","소르기","50G"],["アパチア","아파치아","150G"],["ヒカリボシ","히카리보시","300G"]],other:"アオギンジ, ヒシバナ, ニネイアッカ, バク, ユナメイ, ソルダネラ, スウィートリーフ(흥행 의뢰 보상) 등 탐색"},
+ "veg|sp":{shop:[["シャクトウ","샤쿠토우","50G (아기뇨 마을 시장)"],["アガヴェ","아가베","50G (바이나 오아시스 시장)"],["クレストル","크레스토르","150G (바이나 오아시스)"],["煉獄草","렌고쿠소","1000G (바이나 오아시스)"]],other:"サンノミ, ロカ, メララ, スパイスリーフ, アルマメット, グルマオサ 등 탐색·재배"},
+ "veg|bt":{shop:[["ザンゲ","잔게","30G"],["オブロマ","오브로마","50G"],["ジョッパ","좃파","500G"],["エンリエット","엔리에트","1000G"]],other:"イチノミ, リナリア, キンバイ, オリバ, ハクサン, チャノキ, ビターリーフ 등 탐색"},
+ "veg|ra":{shop:[],other:"ウサモス, ココミンジ가 진미 야채로 확인됨 (검색 결과 일부만 확인, 전체 목록과 구입처는 미확인)"},
+ "fish|sw":{shop:[["ゴールドトラウト","골드 트라우트","500G"]],other:"カーネボニート, カガヤキウオ(브론테스 호), タルトゴビー, バアルパイク, シュガーマーリン, ハートボニート 탐색"},
+ "fish|sp":{shop:[["リルフィッシュ","릴피시","50G (판도라 항구 시장)"]],other:"スカライ, ホワイトトラウト, コーシャルーガー, バザリーシャーク, ガラマーリン 등 낚시·탐색"},
+ "fish|bt":{shop:[["ラーラン","라란","3000G"]],other:"ラドンパイク, ラドンローチ, クイーンローチ, ハードフィッシュ, シールドパイク 등 호수·바다 탐색"},
+ "fish|ra":{shop:[],other:"진미 생선 재료는 확인하지 못했습니다. 진미를 원하는 동물은 야채형(모노케로스, 팔콘, 살라미스 전상)뿐입니다."},
+ "meat|sw":{shop:[["スナブタ肉","사막돼지 고기","100G"]],other:"クマ肉(아틀라스 곰 격파), 海獣肉(해수 격파)"},
+ "meat|sp":{shop:[],other:"オオカミ肉(줄무늬 늑대 격파), クサリク肉(수수께끼 상자), ルフ肉(고급 고기 상자)"},
+ "meat|bt":{shop:[],other:"巨大肉(상인 구입·교환·고급 고기 상자), 飛蜥蜴肉(비도마뱀 격파), ヤク肉(퀘스트 보상)"},
+ "meat|ra":{shop:[],other:"砂虫肉가 진미 고기로 확인됨 (일부만 확인)"}
+};
+/* 카이 편 캐릭터별 추천 (Game8 騎乗動物の捕獲とキャラ別おすすめ) */
+const CL={fn:"포레스트 나이트",lc:"경기병",tr:"트루바두르",cm:"기갑타병",dr:"드라군",wg:"천익병",ca:"칼라드리오스",ch:"전차병"};
+const KAI={"카이":["bmaji","cm"],"티아라":["mono","tr"],"피터르":["hanketsu","fn"],"울턴드":["mono","tr"],"에스메랄다":["rmega","cm"],"미카엘라":["hanketsu","fn"],"릴리안":["hanketsu","fn"],"라이선더":["rmega","cm"],"시로코":["maji","ca"],"올림피아":["mono","tr"],"무우":["bau","dr"],"단테":["mono","tr"],"우술라":["hanketsu","fn"],"시몬":["bau","dr"],"디에고":["hanketsu","fn"],"리네":["mono","tr"],"나타":["hanketsu","lc"],"그자람":["hanketsu","lc"],"카타냐":["peg","wg"],"누디누":["rmega","cm"],"밴디츠":["hanketsu","ch"],"알렉산드라":["bouq","wg"],"양계":["mono","tr"],"녹투라":["bau","dr"],"소피아":["mono","tr"],"페페":["hanketsu","fn"],"세테스":["hanketsu","lc"],"로레타":["peg","wg"],"제스터":["hanketsu","fn"],"루루디아":["peg","wg"],"대도":["bau","dr"],"피아나":["mono","tr"],"하르빈":["hanketsu","fn"],"자코네":["bau","dr"],"마지데":["bau","dr"],"키로이카":["hanketsu","fn"],"자스민":["hanketsu","lc"],"누조":["hanketsu","fn"],"이니오니":["hanketsu","fn"]};
+
+/* ===== 루트별 계산 ===== */
+const RI=k=>LK.indexOf(k);
+const DIFF={"초":6,"고":3,"중":1.5,"저":0,"":0};
+function ease(v){ // 낮을수록 쉬움
+  if(v===null)return 99; if(v==="A"||(Array.isArray(v)&&v[0]==="A"))return 0;
+  return v[0]+v[1]+(DIFF[v[2]]||0);
+}
+function easeLabel(e){return e>=99?["불가",""]:e===0?["자동","ok"]:e<=11?["쉬움","ok"]:e<=15?["보통","acc"]:["어려움","warn"];}
+function isEarly(v){return v==="A"||(Array.isArray(v)&&(v[0]==="A"||v[3]==="튜토리얼"));}
+function dir(x,k){
+  if(k==="c"){
+    const e=KAI[x.ko]; if(!e) return `기승 추천 자료 없음. 기존 육성 유지 (<span class="tag">${esc(x.cls)}</span>)`;
+    const a=ANI_BY[e[0]]; return `<b>${esc(a.ko)}</b> → ${CL[e[1]]}<span class="ext">${TASTE[a.t]} ${FOOD[a.f]}로 유인${a.nc?" (포획 불가, 합류 시 입수)":""}</span>`;
+  }
+  const r=x.role+" "+x.cls, out=[];
+  const archer=/궁|아처/.test(r), healer=/힐러|와이즈맨|프리스트/.test(r), mob=/기병|비행|비병|속도형|바딩거|오리하르디아|보우나이트/.test(r), tank=/중장|탱커|포트리스/.test(r);
+  if(k==="d"){ if(archer)out.push("궁병이 얇은 루트라 우선 기용"); if(healer)out.push("힐러 보강 대상"); if(tank)out.push("에스메랄다와 역할이 겹침. 한 명만 기용 검토"); }
+  if(k==="t"){ if(healer)out.push("소피아 외 보조 힐러로 활용"); if(tank)out.push("세오도라와 함께 전열 구성"); if(archer)out.push("전열 뒤 원거리 딜러"); }
+  if(k==="l"){ if(mob)out.push("기동력 보충 (천녀의 노래 재행동과 궁합)"); if(archer)out.push("원거리 딜러 보강"); if(healer)out.push("올림피아와 역할 확인 후 선택"); }
+  if(!out.length) out.push("기본 추천 육성 유지");
+  return out.map(esc).join("<br>")+`<span class="ext">(추정) 기준: ${esc(x.cls)}</span>`;
+}
+const ALL=()=>HOME.concat(SCOUT);
+
+/* ===== 내 루트 패널 ===== */
+function routePanel(){
+  const k=route, L=LORD[k], i=RI(k);
+  const early=HOME.filter(x=>isEarly(x.r[i]));
+  const sc=SCOUT.map(x=>({x,e:ease(x.r[i])})).filter(o=>o.e<99).sort((a,b)=>a.e-b.e||"SSABCD".indexOf(a.x.tier)-"SSABCD".indexOf(b.x.tier));
+  const cond=v=>Array.isArray(v)?`${v[0]}S ${v[1]}R${v[2]?` · 교섭 ${v[2]}`:""}${v[3]?` · ${v[3]}`:""}`:"자동";
+  const memCard=x=>{
+    const v=x.r[i], tut=Array.isArray(v)&&v[3]==="튜토리얼";
+    return `<div class="box"><h3><span>${esc(x.ko)}</span><span class="pill ${tut?"warn":"ok"}">${tut?"튜토리얼 스카우트":"초기 합류"}</span></h3>
+     <p class="lb">${esc(x.role)} · 티어 ${x.tier}</p>
+     <p><b>초반 운용:</b> ${esc(x.pro)}</p><p><b>주의:</b> ${esc(x.con)}</p>
+     <p><b>첫 육성:</b> ${esc(x.path)} → ${esc(x.cls)}</p>
+     <p><b>이 루트 방향:</b> ${dir(x,k)}</p></div>`;
+  };
+  const ord=sc.map(o=>{const [lb,cl]=easeLabel(o.e),v=o.x.r[i];
+    return `<li><span><span class="nm">${esc(o.x.ko)}</span> <span class="tier ${o.x.tier}">${o.x.tier}</span> <span class="pill ${cl}">${lb}</span><br><span class="sm">${cond(v)}${o.x.gd?` · 필요 외전: ${esc(GD[o.x.gd].name)}`:""}${o.x.arr?` · ${esc(o.x.arr)}`:""}</span></span></li>`;}).join("");
+  const rec=SCOUT.filter(x=>x.rec.includes(k)).map(x=>x.ko);
+  $("routePanel").innerHTML=`
+  <div class="sel-head ${k}"><b>${L.name} 루트</b><p>${esc(L.line)}</p><p><b>${esc(L.pick)}</b></p></div>
+  <h2>육성 방향</h2>
+  <div class="box"><ul>${L.build.map(t=>`<li>${t}</li>`).join("")}</ul></div>
+  <h2>1부 초반 가이드: 처음 쓰는 동료</h2>
+  <p class="note">이 루트에서 자동 또는 튜토리얼로 합류하는 캐릭터입니다. 초반에는 이들만으로 진행하므로, 먼저 역할과 첫 병종을 확인하세요.</p>
+  <div class="mem">${early.map(memCard).join("")}</div>
+  <div class="grid2" style="margin-top:14px">
+   <div class="box"><h3>1부 초반 진행 순서</h3><ol>
+    <li>튜토리얼 스카우트(1S 2R) 대상을 첫 자유행동에서 바로 영입합니다.</li>
+    <li>모든 인물에게 선물을 한 번씩 줘서 스카우트·식사 메뉴를 엽니다. 지원 레벨은 세이브 전체 공유입니다.</li>
+    <li>명성 레벨은 본편과 서브퀘스트로 오르며 가장 늦게 오릅니다. 자유행동 때 서브퀘스트를 우선하세요(Game8).</li>
+    <li>9장부터 외전 수주가 열립니다. '외전 일정' 탭의 순서를 따르세요.</li>
+    ${k==="c"?"<li><b>5장</b>에 포획이 열립니다. 한혈마와 모노케로스부터 확보하는 것이 효율적입니다.</li>":""}
+   </ol></div>
+   <div class="box"><h3>이 루트 외전 순서</h3><ol>${ROUTE_PLAN[k].map(t=>`<li>${esc(t)}</li>`).join("")}</ol></div>
+  </div>
+  <h2>스카우트 추천 순서</h2>
+  <p class="note">${L.name} 루트에서 지원+명성+교섭 난이도 합계가 낮은 순서입니다. 같은 값이면 티어가 높은 쪽이 먼저입니다. 이 루트에서 불가인 캐릭터는 뺐습니다.</p>
+  <ol class="order">${ord}</ol>
+  <p class="note" style="margin-top:10px">Game8 추천 루트가 ${L.name}인 캐릭터: ${rec.length?rec.map(n=>`<span class="fnd">${esc(n)}</span>`).join(""):"없음"}</p>`;
+}
+
+/* ===== 포획 패널 ===== */
+function capPanel(){
+  const tastes=["sw","sp","bt","ra"], foods=["veg","fish","meat"];
+  const matrix=`<div class="tbl"><table style="min-width:640px"><thead><tr><th>맛 \\ 종류</th>${foods.map(f=>`<th>${FOOD[f]} (${FJP[f]})</th>`).join("")}</tr></thead><tbody>`+
+   tastes.map(t=>`<tr><td class="name"><span class="ko">${TASTE[t]}</span><span class="jp">${TJP[t]}</span></td>`+foods.map(f=>{
+     const an=ANI.filter(a=>a.f===f&&a.t===t);
+     const b=BAIT[f+"|"+t], cheap=b.shop[0];
+     return `<td class="sml">${an.length?an.map(a=>`<span class="fnd">${esc(a.ko)}</span>`).join(""):'<span class="tag">해당 동물 없음</span>'}${cheap?`<span class="gd">가장 싼 재료: <b>${esc(cheap[0])}</b>(${esc(cheap[1])}) ${esc(cheap[2])}</span>`:""}</td>`;}).join("")+`</tr>`).join("")+`</tbody></table></div>`;
+  const items=tastes.map(t=>`<details><summary>${TASTE[t]} (${TJP[t]}) 재료 목록</summary><div>`+foods.map(f=>{
+    const b=BAIT[f+"|"+t];
+    return `<p><b>${FOOD[f]}</b><br>${b.shop.length?"상점: "+b.shop.map(s=>`${esc(s[0])}(${esc(s[1])}) ${esc(s[2])}`).join(", ")+"<br>":""}${b.shop.length?"그 외: ":"입수: "}${esc(b.other)}</p>`;}).join("")+`</div></details>`).join("");
+  const rows=ANI.map(a=>`<tr data-s="${esc((a.ko+a.jp+a.g+a.w).toLowerCase())}"><td class="name"><span class="ko">${esc(a.ko)}</span><span class="jp">${esc(a.jp)}</span></td><td class="full">${a.g}</td><td class="full"><b>${FOOD[a.f]}</b> + <b>${TASTE[a.t]}</b></td><td class="full sml">${esc(a.w)}${a.x?`<span class="gd">${esc(a.x)}</span>`:""}</td></tr>`).join("");
+  const kai=Object.keys(KAI).map(n=>{const e=KAI[n],a=ANI_BY[e[0]];return `<tr data-s="${esc(n.toLowerCase())}"><td class="name"><span class="ko">${esc(n)}</span></td><td class="full">${esc(a.ko)}</td><td class="full">${CL[e[1]]}</td><td class="full sml">${TASTE[a.t]} ${FOOD[a.f]}${a.nc?" (포획 불가)":""}</td></tr>`;}).join("");
+  $("capPanel").innerHTML=`
+  <h2>카이 편 동물 포획</h2>
+  <p class="note">카이 편 1부 5장에서 열립니다. 월드맵의 동물 지점에 <b>동물이 좋아하는 종류(야채·생선·고기)와 맛(단맛·매운맛·쓴맛·진미)이 모두 맞는 재료</b>를 놓으면 동물이 나타납니다(Game8, GameWith, AppMedia).</p>
+  <div class="grid2">
+   <div class="box"><h3>포획 순서</h3><ol>
+    <li>동물 아이콘이 있는 지점으로 이동해 '유인'(おびき寄せ) 명령을 고릅니다.</li>
+    <li>목표 동물이 좋아하는 재료를 한 개 소비해 놓습니다. 카이의 반응으로 맞았는지 알 수 있습니다.</li>
+    <li>몇 턴 기다립니다. 근처 칸에서 턴을 소비하면 낭비가 적습니다.</li>
+    <li>동물이 나온 칸에서 '포획'을 고릅니다. 실패해도 같은 장소에서 재도전할 수 있습니다.</li></ol></div>
+   <div class="box"><h3>알아둘 점</h3><ul>
+    <li>재료가 틀리면 동물이 안 나오고 <b>조우전</b>이 열릴 수 있습니다. 경험치 벌이로 일부러 쓰기도 합니다.</li>
+    <li>좋아하는 맛은 돌보기 화면에서도 확인할 수 있습니다.</li>
+    <li>마구간은 다그시온 하층에 있고, 하루 한 번 먹이를 줘 우호 레벨을 올립니다. 최대 5에서 스킬이 열립니다.</li>
+    <li>잘 키운 동물을 방생하면 아이템을 줄 수 있습니다(AppMedia).</li>
+    <li>로시난테, 부케팔라스, 살라미스 전상은 유인으로 얻지 못합니다.</li></ul></div>
+  </div>
+  <h2>맛 × 종류 → 동물 → 실제 재료</h2>
+  <p class="note">행은 맛, 열은 재료 종류입니다. 칸 안의 동물이 그 조합을 좋아하며, 아래 '가장 싼 재료'는 상점에서 살 수 있는 값싼 예입니다. 재료 이름은 일본어판 표기와 음역입니다. 한국어판 이름은 확인하지 못했습니다.</p>
+  ${matrix}
+  <h3 style="margin:18px 0 4px">맛별 재료 전체 목록</h3>
+  <p class="note">GameWith 食材一覧 기준입니다. 상점 가격은 대표값이며 시장마다 취급 품목이 다릅니다.</p>
+  ${items}
+  <div class="box" style="margin-top:10px;border-color:var(--warn)"><b>미확인·불일치</b><ul>
+    <li>진미(珍味) 재료는 전체 목록을 확인하지 못했습니다. 진미를 좋아하는 모노케로스·팔콘이 한혈마와 함께 핵심 동물이라, 확인되지 않은 재료는 게임 안 재료 설명의 '맛' 항목을 먼저 보세요.</li>
+    <li>다크 페가수스의 맛이 Game8(매운맛)과 GameWith(쓴맛)에서 다릅니다.</li>
+    <li>야생마·마지니우스 등은 출현 장소가 자료마다 조금씩 다릅니다.</li></ul></div>
+  <h2>동물 도감</h2>
+  <div class="tools"><input id="qa" type="search" placeholder="동물, 장소 검색" aria-label="동물 검색"></div>
+  <div class="tbl cards"><table style="min-width:700px"><thead><tr><th>동물</th><th>계통</th><th>좋아하는 재료</th><th>출현 장소</th></tr></thead><tbody id="aniBody">${rows}</tbody></table></div>
+  <h2>카이 편 캐릭터별 추천 동물</h2>
+  <p class="note">Game8 추천표입니다. 보병이던 캐릭터를 기승 병종으로 바꿀 때 기준입니다. 흑마·레드바우 등 3부에서 나오는 동물은 제외했습니다.</p>
+  <div class="tools"><input id="qk" type="search" placeholder="캐릭터 이름 검색" aria-label="캐릭터 검색"></div>
+  <div class="tbl cards"><table style="min-width:640px"><thead><tr><th>캐릭터</th><th>추천 동물</th><th>기승 병종</th><th>유인 재료</th></tr></thead><tbody id="kaiBody">${kai}</tbody></table></div>`;
+  [["qa","aniBody"],["qk","kaiBody"]].forEach(([i,b])=>$(i).addEventListener("input",e=>{const q=e.target.value.trim().toLowerCase();$(b).querySelectorAll("tr").forEach(tr=>tr.hidden=!!q&&!tr.dataset.s.includes(q));}));
+}
+
+/* ===== 팁·비기 ===== */
+function tipPanel(){
+  const S=(t,list)=>`<div class="box"><h3>${t}</h3><ul>${list.map(x=>`<li>${x}</li>`).join("")}</ul></div>`;
+  $("tipPanel").innerHTML=`
+  <h2>팁</h2>
+  <div class="grid2">
+  ${S("시작과 설정",[
+   "<b>첫 플레이는 카이 편</b>이 권장됩니다(Game8 FAQ).",
+   "난이도는 이야기 중심이면 노멀×캐주얼, 전술 중심이면 하드×캐주얼이 추천됩니다(Game8).",
+   "실수는 <b>천각의 백사(天刻の白沙)</b>로 되감을 수 있습니다.",
+   "되돌릴 수 없는 요소가 따로 정리되어 있으니 큰 선택 전에 Game8 '취소할 수 없는 요소'를 확인하세요."])}
+  ${S("영입",[
+   "선물을 한 번 주면 스카우트와 식사가 열립니다. 조건은 대화 메뉴의 인물 정보에서 봅니다.",
+   "<b>지원 레벨은 세이브 공유</b>입니다. 첫 루트에서 올려 두면 이후 루트가 빨라집니다.",
+   "<b>명성 레벨</b>이 가장 늦게 오르니 자유행동에서 서브퀘스트를 우선합니다(Game8).",
+   "교섭 난이도 '초'(시로코, 올림피아, 제스터)는 소속 루트 밖에서 매우 어렵습니다.",
+   "퀴즈: 양계는 치즈, 달, 감자. 사란은 사라미스, 다미나, 좌초선. 시몬은 동전 뒷면. 우술라는 '예' 3회. 마지데는 같은 질문에 세 번 답합니다."])}
+  ${S("카이 편 포획",[
+   "목표 동물의 <b>종류와 맛을 둘 다</b> 맞춰야 합니다. 먼저 돌보기 화면에서 맛을 확인하세요.",
+   "개체마다 기승 스킬이 다릅니다. 마구간에서 확인하고 마음에 안 들면 재포획하세요.",
+   "우호 레벨은 출전만으로도 오르니, 키울 캐릭터를 같은 동물에 고정하면 5까지 빨리 갑니다.",
+   "일부러 틀린 재료를 놓아 조우전을 열면 레벨 올리기에 쓸 수 있습니다."])}
+  ${S("인과 외전",[
+   "<b>외전이 영입의 열쇠</b>입니다. 티아라(카이 외전), 버커니어(레다 외전), 페페·게이츠(베르트랑 외전), 디에고(오르헬 외전), 우술라(타리문 외전), 사란(아나톨리아 외전), 파비오(디트리히 외전).",
+   "수주 기간을 넘기면 방첨탑의 방에서 장을 다시 해야 합니다.",
+   "같은 캐릭터를 여러 루트에서 영입하면 3부에서 합칠 수 있어, 루트마다 다른 병종으로 키우는 편이 유리합니다."])}
+  </div>
+  <h2>비기</h2>
+  <p class="note">공략 사이트에서 확인된 효율 요령입니다. 효과가 큰 것부터 적었습니다.</p>
+  <div class="grid2">
+  ${S("효율 요령",[
+   "<b>방생 보상:</b> 우호도가 높은 동물을 방생하면 아이템을 받을 수 있으니, 불필요한 동물도 먹이를 한 번 더 주고 보내세요(AppMedia).",
+   "<b>조우전 노려서 레벨업:</b> 틀린 재료로 열린 조우전을 경험치 확보용으로 씁니다(Game8).",
+   "<b>콜라보 무기:</b> 무료 업데이트 데이터를 적용한 뒤, 각 루트에서 다그단 도착 후 자유행동에 들어가면 받을 수 있습니다(Game8).",
+   "<b>외전 겹침 처리:</b> 기간이 짧은 외전(예: 오르헬 외전 카이 루트 이틀)은 가장 먼저 잡고, 해당 루트 영입이 쉬운 다른 루트에서 처리하세요."])}
+  ${S("놓치기 쉬운 부분",[
+   "키릭·네이선은 디트리히 편 또는 레다 편의 서브퀘스트 '죽은 누이의 장신구'가 필요하고, <b>전쟁편을 스킵하면 합류하지 않습니다.</b>",
+   "클라프카는 3부 5구분 전투에서 생존해야 합니다.",
+   "3부 합류 리더(오르헬, 타리문, 아나톨리아, 베르트랑)는 1부 외전 클리어가 필요합니다. 루트별로 따로 필요한지는 확정되지 않았습니다.",
+   "교섭 요구 물품(철검, 거인 고기 등)은 미리 챙겨 두세요."])}
+  </div>
+  <p class="note" style="margin-top:12px">Game8와 GameWith 일부 문서는 접근이 막혀 검색 요약만 확인했습니다. 위 내용 중 '(추정)' 표시가 없는 항목은 사이트에서 확인한 내용입니다.</p>`;
+}
+
+/* ===== 최신·출처 ===== */
+function infoPanel(){
+  $("infoPanel").innerHTML=`
+  <h2>최신 정보 (2026-10-23 기준)</h2>
+  <div class="box"><ul>
+   <li>발매 2026-09-17, 대응 기기는 Nintendo Switch 2입니다(Game8 FAQ, 매체 기사).</li>
+   <li>추가 DLC 정보 페이지가 Game8에 있으나, <b>DLC 상세 내용은 이번에 확인하지 못했습니다.</b> 아래 링크에서 직접 확인해 주세요.</li>
+   <li>콜라보 무기는 무료 업데이트 데이터 적용 후 수령할 수 있습니다.</li>
+   <li>티어와 조건은 Game8, 일부 항목은 GameWith, RPG Site, AppMedia를 비교했습니다. 사이트마다 티어와 스킬 설명이 다를 수 있습니다.</li>
+  </ul></div>
+  <div class="box" style="margin-top:10px"><b>자료 불일치·미확인</b><ul>
+   <li>진미 유인 재료 전체 목록, 다크 페가수스의 맛.</li>
+   <li>디트리히, 세오도라, 레다 고유 요소의 세부 효과.</li>
+   <li>3부 합류 리더의 외전을 루트마다 따로 클리어해야 하는지.</li>
+   <li>한국명은 나무위키 표기, 스킬과 병종명은 일본어판 번역·음역이라 한국어판과 다를 수 있습니다.</li></ul></div>
+  <p class="src">출처:
+   <a href="https://game8.jp/fe-banshisenko/816563">Game8 티어표</a>,
+   <a href="https://game8.jp/fe-banshisenko/816618">Game8 스카우트 조건</a>,
+   <a href="https://game8.jp/fe-banshisenko/816464">Game8 클래스 체인지</a>,
+   <a href="https://game8.jp/fe-banshisenko/816778">Game8 외전 수주 조건</a>,
+   <a href="https://game8.jp/fe-banshisenko/816904">Game8 동물 포획</a>,
+   <a href="https://game8.jp/fe-banshisenko">Game8 메인(DLC 포함)</a>,
+   <a href="https://gamewith.jp/fefw/577539">GameWith 포획</a>,
+   <a href="https://gamewith.jp/fefw/578567">단맛</a>, <a href="https://gamewith.jp/fefw/578568">매운맛</a>, <a href="https://gamewith.jp/fefw/578569">쓴맛</a> 식재료,
+   <a href="https://appmedia.jp/fe_banshisenkou/80410900">AppMedia 포획과 사육</a>,
+   <a href="https://redfreshet.com/fe-banshisenko-mount-animals/">RedFreshet 기승 동물</a>,
+   <a href="https://www.rpgsite.net/guide/21391-fire-emblem-fortunes-weave-recruitment-guide-all-characters-in-game-how-to-recruit-them">RPG Site 영입 가이드</a>,
+   <a href="https://namu.wiki/w/%ED%8C%8C%EC%9D%B4%EC%96%B4%20%EC%97%A0%EB%B8%94%EB%A0%98%20%EB%A7%8C%EC%9E%90%EC%B2%9C%ED%99%8D/%EB%93%B1%EC%9E%A5%EC%9D%B8%EB%AC%BC">나무위키 등장인물</a>
+  </p>`;
+}
+
+/* ===== 외전 (기존) ===== */
+function gdSection(){
+  $("gd-body").innerHTML=Object.values(GD).map(g=>`<tr>
+   <td class="name"><span class="ko">${esc(g.name)}</span><span class="clan">해금: ${esc(g.unlock)}</span></td>
+   <td>${LK.map(k=>g.p[k]?`<span class="gp ${k}"><b>${LN[k]}</b> ${esc(g.p[k])}</span>`:"").join("")}</td>
+   <td class="${g.best?"gbest "+g.best:""}">${esc(g.rec)}</td></tr>`).join("");
+  $("gd-route").innerHTML=LK.map(k=>`<div class="lord ${k}"><b>${LN[k]} 루트</b><ol>${ROUTE_PLAN[k].map(t=>`<li>${esc(t)}</li>`).join("")}</ol></div>`).join("");
+}
+
+/* ===== 도감 표 ===== */
+function condCell(x,home){
+  const out=[];
+  if(home){const tut=x.r.some(v=>Array.isArray(v)&&v[3]==="튜토리얼");out.push(tut?"소속 루트: 영입 튜토리얼 (1S 2R)":"소속 루트: 자동 합류");out.push("다른 루트: 지원·명성 충족 후 스카우트");}
+  else out.push("지원·명성 충족 후 스카우트");
+  if(x.nego) out.push(`교섭: ${x.nego}`);
+  let h=out.map(esc).join("<br>");
+  if(x.gd){const g=GD[x.gd];h+=`<span class="gd">필요 외전: <b>${esc(g.name)}</b><br>추천 시기: ${esc(g.rec)}</span>`;}
+  return h;
+}
+function head(){return `<tr><th>캐릭터</th><th>역할·특기</th><th>개인 스킬</th><th>강점 / 약점</th><th>추천 육성</th><th id="dh">육성 방향</th><th>영입 조건</th>${LK.map(k=>`<th class="rc ${k}">${LN[k]}</th>`).join("")}</tr>`;}
+function cell(v,k,rec){
+  const lab=`<span class="rl">${LN[k]}</span>`, isRec=rec.includes(k), mine=k===route?" mine":"";
+  if(v===null) return `<td class="r na ${k}${mine}">${lab}<span class="req">불가</span></td>`;
+  if(v==="A"||(Array.isArray(v)&&v[0]==="A")) return `<td class="r ${k} auto${isRec?" rec":""}${mine}">${lab}<span class="req">자동</span>${Array.isArray(v)?`<span class="ext">${esc(v[1])}</span>`:""}</td>`;
+  const [s,r,d,x]=v;
+  return `<td class="r ${k}${isRec?" rec":""}${mine}">${lab}<span class="req">${s}S ${r}R</span>${d?`<span class="ext">교섭 ${d}</span>`:""}${x?`<span class="ext">${esc(x)}</span>`:""}</td>`;
+}
+function row(x,home){
+  return `<tr data-rec="${x.rec}" data-tier="${x.tier}" data-s="${esc([x.ko,x.jp,x.clan,x.role,x.fav,x.skill,x.cls,x.path].join(" ").toLowerCase())}">
+   <td class="name"><span class="ko">${esc(x.ko)}<span class="tier ${x.tier}">${x.tier}</span></span><span class="jp">${esc(x.jp)}</span><span class="clan">${esc(x.clan)}</span>${x.arr?`<span class="arr">${esc(x.arr)}</span>`:""}</td>
+   <td class="full">${esc(x.role)}<span class="clan">특기: ${esc(x.fav)}</span></td>
+   <td class="full">${esc(x.skill)}</td>
+   <td class="full"><span class="pros">${esc(x.pro)}</span><span class="cons">${esc(x.con)}</span></td>
+   <td class="full cls">${esc(x.cls)}<span class="path">${esc(x.path)} →</span><span class="div">신장: ${esc(x.div)}</span></td>
+   <td class="full dir">${dir(x,route)}</td>
+   <td class="full nego">${condCell(x,home)}</td>
+   ${LK.map((k,i)=>cell(x.r[i],k,x.rec)).join("")}</tr>`;
+}
+function lateRow(x){
+  return `<tr data-rec="none" data-tier="${x.tier}" data-s="${esc([x.ko,x.jp,x.skill,x.cls].join(" ").toLowerCase())}">
+  <td class="name"><span class="ko">${esc(x.ko)}<span class="tier ${x.tier}">${x.tier}</span></span><span class="jp">${esc(x.jp)}</span></td><td>${esc(x.skill)}</td><td class="cls">${esc(x.cls)}</td><td>${x.join}${x.gd?`<span class="gd">추천 시기: ${esc(GD[x.gd].rec)}</span>`:""}</td></tr>`;
+}
+function renderTables(){
+  $("th1").innerHTML=head();$("th2").innerHTML=head();
+  $("home").innerHTML=HOME.map(x=>row(x,true)).join("");
+  $("scout").innerHTML=SCOUT.map(x=>row(x,false)).join("");
+  document.querySelectorAll(".dir").forEach(td=>td.style.setProperty("--accent",`var(--${{c:"cai",d:"die",t:"the",l:"led"}[route]})`));
+  apply();
+}
+function apply(){
+  const q=$("q").value.trim().toLowerCase(); let n=0;
+  ["home","scout","late"].forEach(id=>{
+    let vis=0;
+    $(id).querySelectorAll("tr").forEach(tr=>{
+      const okL=!onlyMine||tr.dataset.rec.includes(route), t=tr.dataset.tier;
+      const okT=tier==="all"||(tier==="CD"?(t==="C"||t==="D"):t===tier);
+      const okQ=!q||tr.dataset.s.includes(q);
+      const show=okL&&okT&&okQ; tr.hidden=!show; if(show){vis++;n++;}
+    });
+    $("e-"+id).style.display=vis?"none":"block";
+  });
+  $("count").textContent=`${n}명 표시`;
+}
+
+/* ===== 루트·탭 전환 ===== */
+const COL={c:"cai",d:"die",t:"the",l:"led"};
+function setRoute(k){
+  route=k; store.set("route",k);
+  document.querySelectorAll(".rt").forEach(b=>b.setAttribute("aria-pressed",b.dataset.route===k?"true":"false"));
+  const r=document.documentElement.style;
+  r.setProperty("--accent",`var(--${COL[k]})`); r.setProperty("--accent-bg",`var(--${COL[k]}-bg)`);
+  routePanel(); renderTables();
+}
+function setTab(t){
+  curTab=t; store.set("tab",t);
+  document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===t?"true":"false"));
+  document.querySelectorAll(".panel").forEach(p=>p.hidden=p.id!=="p-"+t);
+  window.scrollTo({top:0});
+}
+document.querySelectorAll(".rt").forEach(b=>b.addEventListener("click",()=>setRoute(b.dataset.route)));
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.tab)));
+document.querySelectorAll(".tier-b").forEach(b=>b.addEventListener("click",()=>{tier=b.dataset.tier;document.querySelectorAll(".tier-b").forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));apply();}));
+$("onlyMine").addEventListener("click",e=>{onlyMine=!onlyMine;e.currentTarget.setAttribute("aria-pressed",onlyMine);apply();});
+$("q").addEventListener("input",apply);
+
+$("late").innerHTML=LATE.map(lateRow).join("");
+gdSection(); capPanel(); tipPanel(); infoPanel();
+const r0=store.get("route","c"); setRoute(LK.includes(r0)?r0:"c");
+const t0=store.get("tab","route"); setTab(["route","dex","gaiden","capture","tips","info"].includes(t0)?t0:"route");
+</script>
+
+</body>
+</html>
